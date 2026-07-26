@@ -10,7 +10,7 @@ from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKe
 BOT_TOKEN = "8653136894:AAHpu03Vx-ciIGfWdhlVFwzSCtMnWWkUcxw"
 ADMIN_ID = 2092773964
 # Render автоматически предоставит URL, либо используем локальный
-SERVER_URL = os.getenv("RENDER_EXTERNAL_URL", "http://localhost:5000")
+SERVER_URL = "https://fntd2-bot.onrender.com"
 
 app = Flask(__name__, template_folder="templates")
 bot = Bot(token=BOT_TOKEN)
