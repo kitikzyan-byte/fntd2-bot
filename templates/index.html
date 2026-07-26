@@ -9,10 +9,9 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; user-select: none; }
         body { background: #0e1015; color: #fff; display: flex; flex-direction: column; align-items: center; padding: 12px; min-height: 100vh; }
         
-        /* Блокировщик, пока не введет ник */
         #authOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0e1015; z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; }
         .auth-card { background: #161a23; border: 2px solid #ffaa00; padding: 25px; border-radius: 14px; max-width: 360px; width: 100%; }
-        .auth-card h2 { font-size: 16px; color: #ffaa00; margin-bottom: 12px; line-height: 1.4; }
+        .auth-card h2 { font-size: 15px; color: #ffaa00; margin-bottom: 12px; line-height: 1.4; }
         .auth-card p { font-size: 12px; color: #aaa; margin-bottom: 15px; }
         .auth-input { width: 100%; background: #12151c; border: 1px solid #3a4454; color: #00ffcc; padding: 10px; border-radius: 8px; outline: none; font-weight: bold; font-size: 14px; margin-bottom: 15px; text-align: center; }
 
@@ -58,7 +57,6 @@
 </head>
 <body>
 
-    <!-- Окно авторизации / приветствия -->
     <div id="authOverlay">
         <div class="auth-card">
             <h2>Привет, улучшай своих юнитов в FNTD 2 UPGRADER!</h2>
@@ -110,7 +108,6 @@
 
     <button class="action-btn" onclick="startUpgradeProcess()">СДЕЛАТЬ АПГРЕЙД</button>
 
-    <!-- Модалка почтового перевода -->
     <div class="modal" id="payModal">
         <div class="modal-card">
             <h3 style="color:#ffaa00; margin-bottom:8px;">ПОЧТОВЫЙ ПЕРЕВОД</h3>
@@ -121,7 +118,6 @@
         </div>
     </div>
 
-    <!-- Модалка ожидания подтверждения -->
     <div class="modal" id="waitingModal">
         <div class="modal-card">
             <h3 style="color:#00ffcc; margin-bottom:10px;">ОЖИДАНИЕ ПРОВЕРКИ</h3>
@@ -129,7 +125,6 @@
         </div>
     </div>
 
-    <!-- Модалка успешного подтверждения (перед запуском рулетки) -->
     <div class="modal" id="approvedModal">
         <div class="modal-card" style="border-color: #2ea043;">
             <h2 style="color:#2ea043; font-size:16px; margin-bottom:12px;">🎉 СТАВКА ПРИНЯТА!</h2>
@@ -145,12 +140,14 @@
 
         const PROXY = "https://wsrv.nl/?url=";
         const SOULS_IMG = PROXY + "cdn-icons-png.flaticon.com/512/868/868681.png";
+        
+        // ВСТРОЕННАЯ КАРТИНКА Afterbite Withered Golden Freddy (Base64)
+        const GOLDEN_FREDDY_BASE64 = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAASABIBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=";
         const DEFAULT_IMG = PROXY + "static.wikia.nocookie.net/fnaf-tower-defense/images/a/a2/Withered_Bonnie.png";
 
-        // Полный список всех юнитов, запрошенных пользователем
         const UNITS_LIST = [
             { name: "Nature Reclaimed Foxy", val: 200000, img: DEFAULT_IMG },
-            { name: "Afterbite Withered Golden Freddy", val: 190000, img: DEFAULT_IMG },
+            { name: "Afterbite Withered Golden Freddy", val: 190000, img: GOLDEN_FREDDY_BASE64 }, // Встроена твоя картинка!
             { name: "Deep Sea Calamity Endo", val: 180000, img: DEFAULT_IMG },
             { name: "Foxy.EXE", val: 170000, img: DEFAULT_IMG },
             { name: "Commander Withered Freddy", val: 160000, img: DEFAULT_IMG },
@@ -294,7 +291,6 @@
                 })
             });
 
-            // Начинаем опрос статуса подтверждения от админа
             statusPollInterval = setInterval(checkAdminStatus, 3000);
         }
 
@@ -307,21 +303,20 @@
                     clearInterval(statusPollInterval);
                     document.getElementById('waitingModal').style.display = 'none';
                     document.getElementById('approvedModal').style.display = 'flex';
+                } else if (data.status === 'rejected') {
+                    clearInterval(statusPollInterval);
+                    document.getElementById('waitingModal').style.display = 'none';
+                    alert("❌ Администратор отклонил вашу ставку.");
                 }
             } catch(e) {}
         }
 
         async function closeApprovedAndStart() {
             document.getElementById('approvedModal').style.display = 'none';
-            
-            // Сбрасываем статус на бэкенде
             await fetch(`/api/reset_status/${userId}`, { method: 'POST' });
-
-            // Запускаем анимацию рулетки
             alert("🎰 Апгрейд запущен! Удачи!");
-            // Здесь можно добавить логику кручения рулетки
         }
     </script>
 </body>
-</html>
-               
+    </html>
+    
