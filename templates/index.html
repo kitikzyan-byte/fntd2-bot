@@ -7,77 +7,77 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; user-select: none; }
-        body { background: #0e1015; color: #fff; display: flex; flex-direction: column; align-items: center; padding: 12px; min-height: 100vh; }
+        body { background: #0e1015; color: #fff; display: flex; flex-direction: column; align-items: center; padding: 12px; min-height: 100vh; overflow-x: hidden; }
         
-        #authOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0e1015; z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; }
-        .auth-card { background: #161a23; border: 2px solid #ffaa00; padding: 25px; border-radius: 14px; max-width: 360px; width: 100%; }
-        .auth-card h2 { font-size: 15px; color: #ffaa00; margin-bottom: 12px; line-height: 1.4; }
-        .auth-card p { font-size: 12px; color: #aaa; margin-bottom: 15px; }
-        .auth-input { width: 100%; background: #12151c; border: 1px solid #3a4454; color: #00ffcc; padding: 10px; border-radius: 8px; outline: none; font-weight: bold; font-size: 14px; margin-bottom: 15px; text-align: center; }
+        #authOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0e1015; z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+        .auth-card { background: #161a23; border: 2px solid #ffaa00; padding: 25px; border-radius: 14px; width: 100%; max-width: 360px; text-align: center; }
+        .auth-input { width: 100%; background: #12151c; border: 1px solid #3a4454; color: #00ffcc; padding: 10px; border-radius: 8px; outline: none; margin: 15px 0; text-align: center; font-weight: bold; }
 
         .header { width: 100%; max-width: 420px; display: flex; justify-content: space-between; align-items: center; background: #161a23; border: 1px solid #2a313d; padding: 10px; border-radius: 12px; margin-bottom: 12px; }
-        .nick-box { display: flex; flex-direction: column; width: 100%; }
-        .nick-label { font-size: 10px; color: #ffaa00; font-weight: bold; margin-bottom: 2px; }
-        .nick-input { background: #12151c; border: 1px solid #3a4454; color: #00ffcc; padding: 6px 10px; border-radius: 6px; outline: none; font-weight: bold; font-size: 13px; width: 100%; }
-        
+        .nick-input { background: transparent; border: none; color: #00ffcc; font-weight: bold; font-size: 14px; outline: none; width: 60%; }
+        .notif-btn { background: #2a313d; border: none; color: #fff; padding: 6px 12px; border-radius: 6px; cursor: pointer; position: relative; }
+        .notif-badge { position: absolute; top: -5px; right: -5px; background: red; color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; display: none; }
+
         .souls-slider-box { width: 100%; max-width: 420px; background: #161b24; border: 1px solid #2ea043; padding: 10px; border-radius: 10px; margin-bottom: 12px; text-align: center; }
-        .souls-slider-box label { font-size: 12px; font-weight: bold; color: #00ffcc; display: block; margin-bottom: 6px; }
-        .souls-slider-box input { width: 100%; accent-color: #00ffcc; cursor: pointer; }
-        
+        .souls-slider-box input { width: 100%; accent-color: #00ffcc; cursor: pointer; margin-top: 5px; }
+
         .slots-wrapper { display: flex; gap: 10px; width: 100%; max-width: 420px; margin-bottom: 12px; }
-        .slot-card { flex: 1; background: #161b24; border: 1px solid #2d3645; border-radius: 10px; padding: 8px; text-align: center; height: 100px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .slot-card.bet { border-color: #2ea043; }
-        .slot-card.target { border-color: #ff3355; }
+        .slot-card { flex: 1; background: #161b24; border: 2px solid #2d3645; border-radius: 10px; padding: 8px; text-align: center; height: 110px; cursor: pointer; transition: 0.2s; }
+        .slot-card.active-select { border-color: #ffaa00; background: #222938; }
         .slot-img { width: 45px; height: 45px; object-fit: contain; }
-        .slot-name { font-size: 9px; font-weight: bold; margin-top: 4px; color: #ddd; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
-        
+        .slot-name { font-size: 10px; font-weight: bold; margin-top: 4px; color: #ddd; }
+        .slot-label { font-size: 9px; color: #aaa; text-transform: uppercase; margin-bottom: 4px; }
+
         .wheel-box { position: relative; width: 160px; height: 160px; margin: 10px 0; display: flex; align-items: center; justify-content: center; }
-        .pointer-top { position: absolute; top: -8px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent; border-top: 15px solid #ffcc00; z-index: 10; }
+        .pointer-top { position: absolute; top: -8px; left: 50%; transform: translateX(-50%); border-left: 8px solid transparent; border-right: 8px solid transparent; border-top: 15px solid #ffcc00; z-index: 10; }
         canvas { border-radius: 50%; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
-        .chance-center { position: absolute; width: 50px; height: 50px; background: #0c0e12; border: 2px solid #ffcc00; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; font-size: 13px; color: #fff; }
+        .chance-center { position: absolute; width: 50px; height: 50px; background: #0c0e12; border: 2px solid #ffcc00; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 13px; color: #fff; }
         
-        .grid-header { width: 100%; max-width: 420px; font-size: 11px; color: #7a8b9e; font-weight: bold; text-transform: uppercase; margin-bottom: 6px; }
         .items-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; width: 100%; max-width: 420px; max-height: 150px; overflow-y: auto; background: #12151c; border: 1px solid #262c38; padding: 8px; border-radius: 10px; margin-bottom: 12px; }
         .grid-item { background: #181d26; border: 1px solid #2d3645; border-radius: 6px; padding: 6px; text-align: center; cursor: pointer; }
-        .grid-item:hover { border-color: #ffaa00; }
+        .grid-item:active { border-color: #ffaa00; }
         .grid-item img { width: 35px; height: 35px; object-fit: contain; }
-        .grid-item p { font-size: 8px; font-weight: bold; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #bbb; }
-        
+        .grid-item p { font-size: 8px; font-weight: bold; margin-top: 2px; color: #bbb; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
         .action-btn { width: 100%; max-width: 420px; padding: 14px; background: linear-gradient(180deg, #ffaa00 0%, #e67300 100%); border: none; border-radius: 8px; color: #000; font-size: 15px; font-weight: 900; cursor: pointer; }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); flex-direction: column; align-items: center; justify-content: center; z-index: 100; padding: 15px; text-align: center; }
+        .modal-card { background: #161b24; border: 1px solid #2d3645; padding: 20px; border-radius: 12px; max-width: 380px; width: 100%; }
         
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); flex-direction: column; align-items: center; justify-content: center; z-index: 100; padding: 15px; }
-        .modal-card { background: #161b24; border: 1px solid #2d3645; padding: 20px; border-radius: 12px; max-width: 380px; width: 100%; text-align: center; }
+        #notifModal { justify-content: flex-start; padding-top: 50px; }
+        .notif-list { width: 100%; max-height: 70vh; overflow-y: auto; text-align: left; margin-top: 15px; }
+        .notif-item { background: #222938; padding: 10px; border-radius: 8px; margin-bottom: 10px; font-size: 12px; border-left: 4px solid #00ffcc; }
     </style>
 </head>
 <body>
 
-    <div id="authOverlay" style="display:none;">
+    <div id="authOverlay">
         <div class="auth-card">
-            <h2>Привет, улучшай своих юнитов в FNTD 2 UPGRADER!</h2>
-            <p>Введите ваш Roblox ник для доступа к апгрейдеру:</p>
+            <h2 style="color:#ffaa00;">FNTD 2 UPGRADER</h2>
+            <p style="color:#aaa; font-size:12px; margin-top:10px;">Введите Roblox ник:</p>
             <input type="text" id="authNickInput" class="auth-input" placeholder="Ваш ник...">
             <button class="action-btn" onclick="submitAuthNick()">ВОЙТИ</button>
         </div>
     </div>
 
     <div class="header">
-        <div class="nick-box">
-            <span class="nick-label">ROBLOX НИКНЕЙМ</span>
-            <input type="text" id="robloxNick" class="nick-input" disabled>
-        </div>
+        <input type="text" id="robloxNick" class="nick-input" disabled>
+        <button class="notif-btn" onclick="openNotif()">🔔 Уведомления <span class="notif-badge" id="notifBadge">0</span></button>
     </div>
 
-    <div class="souls-slider-box" id="soulsBox">
-        <label>Добавить Souls к ставке: <span id="soulsVal">0</span> / 4000</label>
+    <div class="souls-slider-box">
+        <label style="font-size:12px; color:#00ffcc; font-weight:bold;">Добавить Souls: <span id="soulsVal">0</span></label>
         <input type="range" id="soulsRange" min="0" max="4000" step="100" value="0" oninput="onSoulsSliderChange(this.value)">
     </div>
 
     <div class="slots-wrapper">
-        <div class="slot-card bet">
+        <div class="slot-card active-select" id="slotBet" onclick="selectMode('bet')">
+            <div class="slot-label">Ваша ставка</div>
             <img id="imgBet" class="slot-img">
             <div id="titleBet" class="slot-name"></div>
         </div>
-        <div class="slot-card target">
+        <div class="slot-card" id="slotTarget" onclick="selectMode('target')">
+            <div class="slot-label">Вы получите</div>
             <img id="imgTarget" class="slot-img">
             <div id="titleTarget" class="slot-name"></div>
         </div>
@@ -89,46 +89,95 @@
         <canvas id="wheelCanvas" width="160" height="160"></canvas>
     </div>
 
-    <div class="grid-header">Выберите цель (Юниты):</div>
+    <div style="font-size: 11px; color:#7a8b9e; font-weight:bold; margin-bottom: 5px; text-transform:uppercase; max-width:420px; width:100%;">Список юнитов:</div>
     <div class="items-grid" id="itemsGrid"></div>
 
     <button class="action-btn" onclick="startUpgradeProcess()">СДЕЛАТЬ АПГРЕЙД</button>
 
+    <!-- Модалки -->
     <div class="modal" id="payModal">
         <div class="modal-card">
-            <h3 style="color:#ffaa00; margin-bottom:8px;">ПОЧТОВЫЙ ПЕРЕВОД</h3>
-            <p style="color:#aaa; font-size:12px; margin-bottom:10px;">ОТПРАВЬТЕ СТАВКУ ПО ПОЧТЕ ПОЛЬЗОВАТЕЛЮ</p>
-            <div style="background:#000; color:#ffcc00; font-size:16px; font-weight:bold; padding:10px; border-radius:6px; margin:10px 0; border:1px solid #ffcc00;">fntd2UPGRADER</div>
-            <p style="color:#666; font-size:10px; margin-bottom:15px;">После отправки нажмите кнопку ниже и ожидайте подтверждения.</p>
+            <h3 style="color:#ffaa00;">ПОЧТОВЫЙ ПЕРЕВОД</h3>
+            <p style="color:#aaa; font-size:12px; margin: 10px 0;">ОТПРАВЬТЕ СТАВКУ ПО ПОЧТЕ ИГРОКУ</p>
+            <div style="background:#000; color:#ffcc00; font-size:18px; font-weight:bold; padding:10px; border-radius:6px; margin-bottom:15px; border:1px solid #ffcc00;">fntd2UPGRADER</div>
             <button class="action-btn" onclick="confirmPaymentSent()">Я ОТПРАВИЛ!</button>
         </div>
     </div>
 
     <div class="modal" id="waitingModal">
         <div class="modal-card">
-            <h3 style="color:#00ffcc; margin-bottom:10px;">ОЖИДАНИЕ ПРОВЕРКИ</h3>
-            <p style="color:#aaa; font-size:12px; line-height: 1.4;">Администратор проверяет вашу ставку. Пожалуйста, подождите...</p>
+            <h3 style="color:#00ffcc;">ОЖИДАНИЕ...</h3>
+            <p style="color:#aaa; font-size:12px; margin-top:10px;">Администратор проверяет почту.</p>
         </div>
     </div>
 
-    <div class="modal" id="approvedModal">
-        <div class="modal-card" style="border-color: #2ea043;">
-            <h2 id="resultTitle" style="color:#2ea043; font-size:16px; margin-bottom:12px;">🎉 РЕЗУЛЬТАТ АПГРЕЙДА</h2>
-            <p id="resultText" style="color:#fff; font-size:12px; margin-bottom:15px; line-height: 1.4;">АПГРЕЙД УСПЕШНО ЗАВЕРШЕН!</p>
-            <button class="action-btn" onclick="closeApprovedModal()">ОК</button>
+    <div class="modal" id="resultModal">
+        <div class="modal-card" id="resultCard">
+            <h2 id="resultTitle" style="font-size:20px; margin-bottom:10px;"></h2>
+            <p id="resultText" style="color:#fff; font-size:14px; margin-bottom:20px;"></p>
+            <button class="action-btn" onclick="closeResultModal()">ОК</button>
+        </div>
+    </div>
+
+    <div class="modal" id="notifModal">
+        <div class="modal-card" style="background: transparent; border: none;">
+            <h2 style="color:#00ffcc; text-align:center;">УВЕДОМЛЕНИЯ</h2>
+            <div class="notif-list" id="notifList"></div>
+            <button class="action-btn" style="margin-top:20px;" onclick="closeNotif()">ЗАКРЫТЬ</button>
         </div>
     </div>
 
     <script>
+        // ================== AUDIO ENGINE ==================
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playTick() {
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'triangle'; osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.05);
+        }
+
+        function playWinSound() {
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+            [440, 554, 659, 880].forEach((freq, i) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine'; osc.frequency.value = freq;
+                gain.gain.setValueAtTime(0, audioCtx.currentTime + i*0.1);
+                gain.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + i*0.1 + 0.05);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i*0.1 + 0.5);
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.start(audioCtx.currentTime + i*0.1); osc.stop(audioCtx.currentTime + i*0.1 + 0.5);
+            });
+        }
+
+        function playLoseSound() {
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+            osc.frequency.linearRampToValueAtTime(50, audioCtx.currentTime + 0.5);
+            gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+        }
+
+        // ================== LOGIC ==================
         const tg = window.Telegram.WebApp;
         tg.expand();
         const userId = tg.initDataUnsafe?.user?.id || Math.floor(Math.random() * 1000000);
 
-        // Список юнитов и валюты строго по твоему списку
         const UNITS_LIST = [
             { name: "Gaia Chica", val: 37000, img: "IMG_20260726_205154.jpg" },
             { name: "Headless Horseman Mangle", val: 27000, img: "IMG_20260726_205225.jpg" },
-            { name: "Nature Reclaimed Foxy", val: 24000, img: IMG_20260726_200917 = "IMG_20260726_200917.jpg" }, // исправлено ниже
+            { name: "Nature Reclaimed Foxy", val: 24000, img: "IMG_20260726_200917.jpg" },
             { name: "Candy Cadet", val: 18000, img: "IMG_20260726_204804.jpg" },
             { name: "Valkyrie Chica", val: 17000, img: "IMG_20260726_205432.jpg" },
             { name: "Lolbit", val: 17000, img: "IMG_20260726_204827.jpg" },
@@ -145,53 +194,46 @@
             { name: "Helpy", val: 2000, img: "IMG_20260726_204815.jpg" }
         ];
 
-        // Заменяем корявую строчку картинки Nature Reclaimed Foxy
-        UNITS_LIST[2].img = "IMG_20260726_200917.jpg";
-
-        const SOULS_IMG = "IMG_20260726_210055.jpg";
-
-        let currentBetUnit = UNITS_LIST[UNITS_LIST.length - 1]; // Самый дешевый по умолчанию
-        let soulsBetVal = 0;
+        let selectionMode = 'bet'; // 'bet' or 'target'
+        let currentBet = UNITS_LIST[UNITS_LIST.length - 1];
         let currentTarget = UNITS_LIST[0];
-        let chance = 0;
+        let soulsBetVal = 0;
+        let finalChance = 0;
         let statusPollInterval = null;
+        let fetchNotifInterval = null;
 
-        // Проверка базы при загрузке (сохраненный ник)
-        async function checkSavedUser() {
+        async function initApp() {
             try {
                 const res = await fetch(`/api/user_info/${userId}`);
                 const data = await res.json();
-                if (data.nick && data.nick.trim() !== "") {
+                if (data.nick) {
                     document.getElementById('robloxNick').value = data.nick;
                     document.getElementById('authOverlay').style.display = 'none';
-                } else {
-                    document.getElementById('authOverlay').style.display = 'flex';
+                    checkNotifications();
+                    fetchNotifInterval = setInterval(checkNotifications, 5000);
                 }
-            } catch(e) {
-                document.getElementById('authOverlay').style.display = 'flex';
-            }
+            } catch(e) {}
         }
-        checkSavedUser();
+        initApp();
 
         function submitAuthNick() {
             const nick = document.getElementById('authNickInput').value.trim();
-            if(!nick) return alert("Пожалуйста, введите ник!");
-            
+            if(!nick) return;
             document.getElementById('robloxNick').value = nick;
             document.getElementById('authOverlay').style.display = 'none';
-
-            fetch(`/api/user_info/${userId}`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ roblox_nick: nick })
-            });
+            fetch(`/api/user_info/${userId}`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ roblox_nick: nick }) });
+            fetchNotifInterval = setInterval(checkNotifications, 5000);
         }
 
-        function onSoulsSliderChange(val) {
-            soulsBetVal = parseInt(val);
-            document.getElementById('soulsVal').innerText = soulsBetVal;
-            updateSlots();
+        function selectMode(mode) {
+            selectionMode = mode;
+            document.getElementById('slotBet').classList.remove('active-select');
+            document.getElementById('slotTarget').classList.remove('active-select');
+            if(mode === 'bet') document.getElementById('slotBet').classList.add('active-select');
+            else document.getElementById('slotTarget').classList.add('active-select');
         }
+
+        function onSoulsSliderChange(val) { soulsBetVal = parseInt(val); document.getElementById('soulsVal').innerText = soulsBetVal; updateSlots(); }
 
         function renderGrid() {
             const grid = document.getElementById('itemsGrid');
@@ -201,7 +243,8 @@
                 card.className = 'grid-item';
                 card.innerHTML = `<img src="${item.img}"><p>${item.name}</p>`;
                 card.onclick = () => {
-                    currentTarget = item;
+                    if(selectionMode === 'bet') currentBet = item;
+                    else currentTarget = item;
                     updateSlots();
                 };
                 grid.appendChild(card);
@@ -209,64 +252,51 @@
         }
 
         function updateSlots() {
-            // Отображаем юнита как ставку, плюс учитываем души в математике
-            document.getElementById('imgBet').src = currentBetUnit.img;
-            document.getElementById('titleBet').innerText = currentBetUnit.name + (soulsBetVal > fnGetSouls() ? '' : '');
+            document.getElementById('imgBet').src = currentBet.img;
+            document.getElementById('titleBet').innerText = currentBet.name;
             document.getElementById('imgTarget').src = currentTarget.img;
             document.getElementById('titleTarget').innerText = currentTarget.name;
 
-            let totalBetVal = currentBetUnit.val + soulsBetVal;
+            let totalBetVal = currentBet.val + soulsBetVal;
             let raw = (totalBetVal / currentTarget.val) * 70;
-            // Максимальный шанс строго 70%
-            chance = Math.min(70, Math.max(0.1, raw)).toFixed(2);
-            document.getElementById('chanceNum').innerText = chance + '%';
+            finalChance = Math.min(70, Math.max(0.1, raw)).toFixed(2);
+            document.getElementById('chanceNum').innerText = finalChance + '%';
             drawWheel(0);
         }
-
-        function fnGetSouls() { return soulsBetVal; }
 
         const canvas = document.getElementById('wheelCanvas');
         const ctx = canvas.getContext('2d');
 
         function drawWheel(angleOffset = 0) {
             ctx.clearRect(0, 0, 160, 160);
-            const winAngle = (chance / 100) * 2 * Math.PI;
-            
+            const winAngle = (finalChance / 100) * 2 * Math.PI;
             ctx.save();
             ctx.translate(80, 80);
             ctx.rotate(angleOffset);
             
+            // Зеленая зона (Победа)
             ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, 78, 0, winAngle); ctx.fillStyle = "#2ea043"; ctx.fill();
+            // Красная зона (Поражение)
             ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, 78, winAngle, 2 * Math.PI); ctx.fillStyle = "#da3633"; ctx.fill();
             
             ctx.restore();
         }
 
-        renderGrid();
-        updateSlots();
+        renderGrid(); updateSlots();
 
-        function startUpgradeProcess() {
-            document.getElementById('payModal').style.display = 'flex';
-        }
+        function startUpgradeProcess() { document.getElementById('payModal').style.display = 'flex'; }
 
         async function confirmPaymentSent() {
             document.getElementById('payModal').style.display = 'none';
             document.getElementById('waitingModal').style.display = 'flex';
 
             const nick = document.getElementById('robloxNick').value;
-            let betDesc = `${currentBetUnit.name}`;
-            if(soulsBetVal > 0) betDesc += ` + ${soulsBetVal} Souls`;
+            let betDesc = currentBet.name + (soulsBetVal > 0 ? ` + ${soulsBetVal} Souls` : "");
 
             await fetch('/api/submit_upgrade', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    user_id: userId,
-                    roblox_nick: nick,
-                    bet_info: betDesc
-                })
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ user_id: userId, roblox_nick: nick, bet_info: betDesc, target_info: currentTarget.name, chance: finalChance })
             });
-
             statusPollInterval = setInterval(checkAdminStatus, 3000);
         }
 
@@ -275,52 +305,52 @@
                 const res = await fetch(`/api/check_status/${userId}`);
                 const data = await res.json();
                 
-                if (data.status === 'approved' || data.status === 'rejected') {
+                if (data.status === 'approved_win' || data.status === 'approved_lose' || data.status === 'rejected') {
                     clearInterval(statusPollInterval);
                     document.getElementById('waitingModal').style.display = 'none';
                     
-                    if (data.status === 'approved') {
-                        runUpgradeAnimation(() => {
-                            document.getElementById('resultTitle').style.color = '#2ea043';
-                            document.getElementById('resultTitle').innerText = "🎉 АПГРЕЙД УСПЕШЕН!";
-                            document.getElementById('resultText').innerText = "ВЫ ПОЛУЧИЛИ НОВОГО ЮНИТА!";
-                            document.getElementById('approvedModal').style.display = 'flex';
-                        });
-                    } else {
-                        document.getElementById('resultTitle').style.color = '#da3633';
-                        document.getElementById('resultTitle').innerText = "❌ СТАВКА ОТКЛОНЕНА";
-                        document.getElementById('resultText').innerText = "Администратор отклонил вашу ставку.";
-                        document.getElementById('approvedModal').style.display = 'flex';
+                    if (data.status === 'rejected') {
+                        showResult(false, "Отклонено", "Администратор отменил ставку.");
+                        return;
                     }
+                    
+                    const isWin = (data.status === 'approved_win');
+                    runSpinAnimation(isWin);
                 }
             } catch(e) {}
         }
 
-        // Анимация вращения колеса при одобрении
-        function runUpgradeAnimation(callback) {
+        function runSpinAnimation(isWin) {
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+            
+            // Расчет угла остановки честно:
+            // winAngle = (finalChance / 100) * 360 градусов.
+            // Если победа, останавливаемся между 360 - winAngle и 360 (чтобы верхний поинтер был в зеленой зоне).
+            // Если проигрыш, останавливаемся в остальной части.
+            
+            const winAngleDeg = (finalChance / 100) * 360;
+            let targetStopAngleDeg;
+            
+            if(isWin) {
+                // Случайный угол в зеленой зоне (колесо повернуто так, что 0 градусов - это правая сторона)
+                // Сдвиг -90 градусов нужен, потому что стрелка сверху (270 градусов).
+                targetStopAngleDeg = 270 - (Math.random() * winAngleDeg);
+            } else {
+                // Случайный угол в красной зоне
+                targetStopAngleDeg = 270 - winAngleDeg - (Math.random() * (360 - winAngleDeg));
+            }
+            
+            // Добавляем 5 полных оборотов
+            const totalRotationDeg = (360 * 5) + targetStopAngleDeg;
+            const totalRotationRad = totalRotationDeg * (Math.PI / 180);
+            
             let currentAngle = 0;
-            let speed = 0.5;
-            let spins = 0;
+            let speed = 0.8;
+            let lastTickAngle = 0;
             
             function animate() {
-                currentAngle += speed;
-                speed *= 0.98; // замедление
-                drawWheel(currentAngle);
-                
-                if (speed > 0.005) {
-                    requestAnimationFrame(animate);
-                } else {
-                    setTimeout(callback, 400);
-                }
-            }
-            animate();
-        }
-
-        async function closeApprovedModal() {
-            document.getElementById('approvedModal').style.display = 'none';
-            await fetch(`/api/reset_status/${userId}`, { method: 'POST' });
-        }
-    </script>
-</body>
-            </html>
-                
+                if (currentAngle < totalRotationRad) {
+                    currentAngle += speed;
+                    // Замедление
+                    const progress = currentAngle / totalRotationRad;
+                    speed = Math.max(0.005,
