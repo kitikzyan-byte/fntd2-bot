@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FNTD 2 Upgrader</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, sans-serif; }
+        body { background: #0b0e14; color: #fff; display: flex; flex-direction: column; align-items: center; padding: 15px; min-height: 100vh; }
+
+        /* Верхняя панель профиля */
+        .top-bar { width: 100%; max-width: 450px; display: flex; justify-content: space-between; align-items: center; background: #161b22; border: 1px solid #30363d; padding: 10px 15px; border-radius: 12px; margin-bottom: 15px; }
+        .nick-input { background: #0d1117; border: 1px solid #30363d; color: #00ffcc; padding: 8px 12px; border-radius: 6px; outline: none; font-weight: bold; width: 65%; }
+        .avatar-box { width: 45px; height: 45px; border-radius: 50%; border: 2px solid #ff0055; overflow: hidden; background: #0d1117; }
+        .avatar-box img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* Центр: Колесо Апгрейдера в стиле CS2 */
+        .upgrader-center { position: relative; width: 200px; height: 200px; margin: 15px 0; display: flex; align-items: center; justify-content: center; }
+        .pointer { position: absolute; top: -8px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 10px solid transparent; border-right: 10px solid transparent; border-top: 18px solid #ff5500; z-index: 10; filter: drop-shadow(0 0 8px #ff5500); }
+        canvas { border-radius: 50%; transition: transform 4s cubic-bezier(0.1, 0.99, 0.1, 1); box-shadow: 0 0 25px rgba(255, 0, 85, 0.3); }
+        .chance-badge { position: absolute; width: 65px; height: 65px; background: #0d1117; border: 2px solid #ff0055; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 900; font-size: 16px; color: #fff; box-shadow: inset 0 0 10px rgba(255,0,85,0.5); }
+        .chance-badge span { font-size: 9px; color: #8b949e; }
+
+        /* Выбор предметов */
+        .slots-container { display: flex; gap: 10px; width: 100%; max-width: 450px; margin-bottom: 15px; }
+        .slot { flex: 1; background: #161b22; border: 1px solid #30363d; border-radius: 10px; padding: 10px; text-align: center; height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .slot.active { border-color: #ff0055; background: rgba(255,0,85,0.08); }
+        .slot-img { width: 48px; height: 48px; object-fit: contain; margin-bottom: 5px; }
+        .slot-title { font-size: 11px; font-weight: bold; color: #c9d1d9; }
+
+        /* Сетка всех юнитов FNTD 2 */
+        .grid-title { font-size: 12px; color: #8b949e; text-transform: uppercase; margin-bottom: 8px; width: 100%; max-width: 450px; font-weight: bold; }
+        .units-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; max-width: 450px; max-height: 180px; overflow-y: auto; background: #161b22; padding: 10px; border-radius: 10px; border: 1px solid #30363d; margin-bottom: 15px; }
+        .unit-card { background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 6px; text-align: center; cursor: pointer; }
+        .unit-card:hover { border-color: #58a6ff; }
+        .unit-card img { width: 35px; height: 35px; object-fit: contain; }
+        .unit-card p { font-size: 10px; font-weight: bold; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* Кнопки */
+        .btn { width: 100%; max-width: 450px; padding: 15px; background: linear-gradient(135deg, #ff0055, #ff5500); border: none; border-radius: 10px; color: #fff; font-size: 16px; font-weight: 900; text-transform: uppercase; cursor: pointer; box-shadow: 0 4px 20px rgba(255, 0, 85, 0.4); }
+
+        /* Модалки */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); flex-direction: column; align-items: center; justify-content: center; z-index: 100; padding: 20px; text-align: center; }
+        .modal-box { background: #161b22; border: 1px solid #30363d; padding: 25px; border-radius: 15px; max-width: 380px; width: 100%; }
+    </style>
+</head>
+<body>
+
+    <!-- ПРОФИЛЬ -->
+    <div class="top-bar">
+        <input type="text" id="robloxNick" class="nick-input" placeholder="Ваш Ник Roblox" onchange="loadAvatar()">
+        <div class="avatar-box">
+            <img id="userAvatar" src="https://tr.rbxcdn.com/30day-avatar-headshot-png/150/150/AvatarHeadshot/Png/noFilter">
+        </div>
+    </div>
+
+    <!-- СЛОТЫ СТАВКИ И ЦЕЛИ -->
+    <div class="slots-container">
+        <div class="slot active" id="slotBet">
+            <img id="imgBet" class="slot-img" src="https://static.wikia.nocookie.net/five-nights-tower-defense/images/b/b3/Souls.png">
+            <div id="titleBet" class="slot-title">1,000 Душ</div>
+        </div>
+        <div style="align-self: center; font-weight: 900; color: #ff0055;">➔</div>
+        <div class="slot" id="slotTarget">
+            <img id="imgTarget" class="slot-img" src="https://static.wikia.nocookie.net/five-nights-tower-defense/images/b/b5/ApexGoldenFreddy.png">
+            <div id="titleTarget" class="slot-title">Apex Gold Freddy</div>
+        </div>
+    </div>
+
+    <!-- КОЛЕСО -->
+    <div class="upgrader-center">
+        <div class="pointer"></div>
+        <div class="chance-badge"><div id="chanceNum">0%</div><span>ШАНС</span></div>
+        <canvas id="wheelCanvas" width="180" height="180"></canvas>
+    </div>
+
+    <!-- ВЫБОР ИЗ WIKI -->
+    <div class="grid-title">Выберите предмет для апгрейда:</div>
+    <div class="units-grid" id="unitsGrid"></div>
+
+    <button class="btn" onclick="requestUpgrade()">СДЕЛАТЬ АПГРЕЙД</button>
+
+    <!-- МОДАЛКА ОПЛАТЫ -->
+    <div class="modal" id="payModal">
+        <div class="modal-box">
+            <h3 style="color:#ff0055; margin-bottom:10px;">📫 ОТПРАВЬТЕ СТАВКУ</h3>
+            <p style="color:#aaa; font-size:13px; margin-bottom:15px;">
+                Отправьте вашу ставку по почте игроку:<br><br>
+                <b style="color:#ffcc00; font-size:18px; background:#000; padding:6px 12px; border-radius:6px;">fntd2UPGRADER</b>
+            </p>
+            <button class="btn" onclick="sendToAdmin()">Я ОТПРАВИЛ!</button>
+        </div>
+    </div>
+
+    <!-- МОДАЛКА ОЖИДАНИЯ -->
+    <div class="modal" id="waitModal">
+        <div class="modal-box">
+            <h3>⏳ ПРОВЕРКА ПОЧТЫ</h3>
+            <p style="color:#aaa; font-size:13px; margin-top:10px;">Администратор проверяет получение вашей ставки...</p>
+        </div>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        const userId = tg.initDataUnsafe?.user?.id || Math.floor(Math.random()*1000000);
+        const tgUsername = tg.initDataUnsafe?.user?.username || "NoUsername";
+
+        // Юниты и Иконки напрямую с FNTD 2 Wiki CDN
+        const FNTD2_ITEMS = [
+            { name: "500 Душ", val: 500, img: "https://static.wikia.nocookie.net/five-nights-tower-defense/images/b/b3/Souls.png" },
+            { name: "2,000 Душ", val: 2000, img: "https://static.wikia.nocookie.net/five-nights-tower-defense/images/b/b3/Souls.png" },
+            { name: "5,000 Душ", val: 5000, img: "https://static.wikia.nocookie.net/five-nights-tower-defense/images/b/b3/Souls.png" },
+            { name: "Valkyrie Chica", val: 15000, img: "https://static.wikia.nocookie.net/five-nights-tower-defense/images/d/d8/ValkyrieChica.png" },
+            { name: "Shadow Bonnie", val: 35000, img: "https://static.wikia.nocookie.net/five-nights-tower-defense/images/8/83/ShadowBonnie.png" },
+            { name: "Apex Springtrap", val: 100000, img: "https://static.wikia.nocookie.net/five-nights-tower-defense/images/a/a2/ApexSpringtrap.png" },
+            { name: "Apex Puppet", val: 250000, img: "https://static.wikia.nocookie.net/five-nights-tower-defense/images/7/71/ApexPuppet.png" },
+            { name: "Apex Golden Freddy", val: 600000, img: "https://static.wikia.nocookie.net/five-nights-tower-defense/images/b/b5/ApexGoldenFreddy.png" }
+        ];
+
+        let selectedBet = FNTD2_ITEMS[0];
+        let selectedTarget = FNTD2_ITEMS[7];
+        let calculatedChance = 0;
+
+        // Авто-загрузка аватара из Roblox
+        async function loadAvatar() {
+            const nick = document.getElementById('robloxNick').value;
+            if(!nick) return;
+            try {
+                const res = await fetch(`https://users.roblox.com/v1/usernames/users`, {
+                    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({usernames:[nick]})
+                });
+                const data = await res.json();
+                if(data.data?.[0]?.id) {
+                    document.getElementById('userAvatar').src = `https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${data.data[0].id}&size=150x150&format=Png&isCircular=true`;
+                }
+            }catch(e){}
+        }
+
+        // Отрисовка элементов Wiki
+        const grid = document.getElementById('unitsGrid');
+        FNTD2_ITEMS.forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'unit-card';
+            card.innerHTML = `<img src="${item.img}"><p>${item.name}</p>`;
+            card.onclick = () => {
+                selectedTarget = item;
+                document.getElementById('imgTarget').src = item.img;
+                document.getElementById('titleTarget').innerText = item.name;
+                recalc();
+            };
+            grid.appendChild(card);
+        });
+
+        function recalc() {
+            // МАТЕМАТИКА АПГРЕЙДЕРА
+            let rawChance = (selectedBet.val / selectedTarget.val) * 90; // 90% макс от чистой математики
+            calculatedChance = Math.min(95, Math.max(0.1, rawChance)).toFixed(2);
+            document.getElementById('chanceNum').innerText = calculatedChance + '%';
+            drawWheel();
+        }
+
+        const canvas = document.getElementById('wheelCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function drawWheel() {
+            ctx.clearRect(0, 0, 180, 180);
+            const winAngle = (calculatedChance / 100) * 2 * Math.PI;
+            ctx.beginPath(); ctx.moveTo(90, 90); ctx.arc(90, 90, 90, 0, winAngle); ctx.fillStyle = "#2ea043"; ctx.fill();
+            ctx.beginPath(); ctx.moveTo(90, 90); ctx.arc(90, 90, 90, winAngle, 2 * Math.PI); ctx.fillStyle = "#da3633"; ctx.fill();
+        }
+        recalc();
+
+        function requestUpgrade() {
+            if(!document.getElementById('robloxNick').value) return alert("Введите Roblox Ник!");
+            document.getElementById('payModal').style.display = 'flex';
+        }
+
+        async function sendToAdmin() {
+            document.getElementById('payModal').style.display = 'none';
+            document.getElementById('waitModal').style.display = 'flex';
+
+            await fetch('/api/create_bet', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    user_id: userId, tg_username: tgUsername,
+                    roblox_nick: document.getElementById('robloxNick').value,
+                    bet_item: selectedBet.name, target_item: selectedTarget.name, chance: calculatedChance
+                })
+            });
+
+            // Опрос админ-подтверждения
+            const poll = setInterval(async () => {
+                const res = await fetch(`/api/check_status/${userId}`);
+                const data = await res.json();
+                if(data.status === 'approved') {
+                    clearInterval(poll);
+                    document.getElementById('waitModal').style.display = 'none';
+                    spin();
+                } else if(data.status === 'rejected') {
+                    clearInterval(poll);
+                    document.getElementById('waitModal').style.display = 'none';
+                    alert("Ставка не найдена на почте!");
+                }
+            }, 2000);
+        }
+
+        function spin() {
+            const isWin = Math.random() * 100 <= calculatedChance;
+            let targetDegree = isWin ? Math.random() * (calculatedChance / 100 * 360) : (calculatedChance / 100 * 360) + Math.random() * ((100 - calculatedChance) / 100 * 360);
+            const totalRot = 360 * 5 + (270 - targetDegree);
+            canvas.style.transform = `rotate(${totalRot}deg)`;
+
+            setTimeout(() => {
+                if(isWin) {
+                    alert(`ПОЗДРАВЛЯЕМ С ПОБЕДОЙ! ОЖИДАЙТЕ ВАШ ПРИЗ (${selectedTarget.name}), В СКОРОМ ВРЕМЕНИ ОН ПРИЙДЕТ ВАМ ПО ПОЧТЕ!`);
+                    fetch('/api/claim_win', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ user_id: userId, win_item: selectedTarget.name })
+                    });
+                } else {
+                    spinConsolationCase(); // КЕЙС УТЕШЕНИЯ ДУШ
+                }
+            }, 4200);
+        }
+
+        // ШАНСЫ КЕЙСА ДУШ ПРИ ПРОИГРЫШЕ
+        function spinConsolationCase() {
+            const rand = Math.random() * 100;
+            let soulPrize = 100;
+            if(rand <= 0.25) soulPrize = 3000;
+            else if(rand <= 0.65) soulPrize = 2500;
+            else if(rand <= 1.15) soulPrize = 2000;
+            else if(rand <= 1.90) soulPrize = 1500;
+            else if(rand <= 2.90) soulPrize = 1000;
+            else if(rand <= 17.9) soulPrize = 750;
+            else if(rand <= 42.9) soulPrize = 500;
+            else if(rand <= 77.9) soulPrize = 250;
+
+            alert(`НЕУДАЧА В АПГРЕЙДЕ!\n\nНо сработал Утешительный Кейс! Вы выбили: ${soulPrize} Душ! Ожидайте начисление по почте.`);
+            fetch('/api/claim_win', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ user_id: userId, win_item: `${soulPrize} Утешительных Душ` })
+            });
+        }
+    </script>
+</body>
+  </html>
+          
