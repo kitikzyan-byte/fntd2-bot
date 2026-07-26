@@ -3,137 +3,111 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FNTD 2 Upgrader CS2 Style</title>
+    <title>FNTD 2 Upgrader</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Titillium Web', 'Segoe UI', sans-serif; user-select: none; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; user-select: none; }
         body { background: #0e1015; color: #fff; display: flex; flex-direction: column; align-items: center; padding: 12px; min-height: 100vh; }
 
-        /* ВЕРХНЯЯ ПАНЕЛЬ С АВАТАРОМ */
-        .header { width: 100%; max-width: 420px; display: flex; justify-content: space-between; align-items: center; background: rgba(22, 26, 35, 0.9); border: 1px solid #2a313d; padding: 8px 12px; border-radius: 12px; margin-bottom: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        .header { width: 100%; max-width: 420px; display: flex; justify-content: space-between; align-items: center; background: #161a23; border: 1px solid #2a313d; padding: 10px; border-radius: 12px; margin-bottom: 12px; }
         .nick-box { display: flex; flex-direction: column; width: 70%; }
-        .nick-label { font-size: 10px; color: #ffaa00; text-transform: uppercase; font-weight: bold; margin-bottom: 2px; }
+        .nick-label { font-size: 10px; color: #ffaa00; font-weight: bold; margin-bottom: 2px; }
         .nick-input { background: #12151c; border: 1px solid #3a4454; color: #00ffcc; padding: 6px 10px; border-radius: 6px; outline: none; font-weight: bold; font-size: 13px; }
-        .avatar-container { width: 48px; height: 48px; border-radius: 50%; border: 2px solid #ffaa00; overflow: hidden; background: #12151c; box-shadow: 0 0 10px rgba(255,170,0,0.3); display: flex; align-items: center; justify-content: center; }
+        .avatar-container { width: 48px; height: 48px; border-radius: 50%; border: 2px solid #ffaa00; overflow: hidden; background: #12151c; display: flex; align-items: center; justify-content: center; }
         .avatar-container img { width: 100%; height: 100%; object-fit: cover; }
 
-        /* ВЫБОР РЕЖИМА ВЫБОРА */
-        .select-mode { display: flex; gap: 8px; width: 100%; max-width: 420px; margin-bottom: 10px; }
-        .mode-btn { flex: 1; padding: 8px; background: #181d26; border: 1px solid #2d3645; color: #888; font-weight: bold; font-size: 11px; text-align: center; border-radius: 6px; cursor: pointer; text-transform: uppercase; }
-        .mode-btn.active-bet { background: #1c2e24; border-color: #2ea043; color: #2ea043; }
-        .mode-btn.active-target { background: #351c22; border-color: #ff3355; color: #ff3355; }
+        .bet-type-selector { display: flex; gap: 8px; width: 100%; max-width: 420px; margin-bottom: 10px; }
+        .type-btn { flex: 1; padding: 8px; background: #181d26; border: 1px solid #2d3645; color: #888; font-size: 11px; font-weight: bold; text-align: center; border-radius: 6px; cursor: pointer; text-transform: uppercase; }
+        .type-btn.active { background: #2ea043; color: #fff; border-color: #2ea043; }
 
-        /* СЛОТЫ CS2 */
+        .souls-slider-box { display: none; width: 100%; max-width: 420px; background: #161b24; border: 1px solid #2ea043; padding: 10px; border-radius: 10px; margin-bottom: 12px; text-align: center; }
+        .souls-slider-box label { font-size: 12px; font-weight: bold; color: #00ffcc; display: block; margin-bottom: 6px; }
+        .souls-slider-box input { width: 100%; accent-color: #00ffcc; cursor: pointer; }
+
         .slots-wrapper { display: flex; gap: 10px; width: 100%; max-width: 420px; margin-bottom: 12px; }
-        .slot-card { flex: 1; background: radial-gradient(circle, #1a202c 0%, #10131a 100%); border: 1px solid #2d3645; border-radius: 10px; padding: 8px; text-align: center; height: 100px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
-        .slot-card.bet { border-color: #2ea043; box-shadow: inset 0 0 15px rgba(46, 160, 67, 0.2); }
-        .slot-card.target { border-color: #ff3355; box-shadow: inset 0 0 15px rgba(255, 51, 85, 0.2); }
-        .slot-img { width: 42px; height: 42px; object-fit: contain; filter: drop-shadow(0 0 5px rgba(255,255,255,0.2)); }
-        .slot-name { font-size: 11px; font-weight: bold; margin-top: 4px; color: #ddd; }
+        .slot-card { flex: 1; background: #161b24; border: 1px solid #2d3645; border-radius: 10px; padding: 8px; text-align: center; height: 100px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .slot-card.bet { border-color: #2ea043; }
+        .slot-card.target { border-color: #ff3355; }
+        .slot-img { width: 42px; height: 42px; object-fit: contain; }
+        .slot-name { font-size: 10px; font-weight: bold; margin-top: 4px; color: #ddd; }
 
-        /* ЦЕНТРАЛЬНОЕ КОЛЕСО CS2 UPGRADER */
-        .wheel-box { position: relative; width: 190px; height: 190px; margin: 10px 0; display: flex; align-items: center; justify-content: center; }
-        .pointer-top { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 10px solid transparent; border-right: 10px solid transparent; border-top: 18px solid #ffcc00; z-index: 10; filter: drop-shadow(0 0 8px #ffcc00); }
-        canvas { border-radius: 50%; box-shadow: 0 0 30px rgba(0,0,0,0.8), 0 0 15px rgba(255, 204, 0, 0.2); transition: transform 4s cubic-bezier(0.15, 0.9, 0.15, 1); }
-        .chance-center { position: absolute; width: 60px; height: 60px; background: #0c0e12; border: 2px solid #ffcc00; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 900; font-size: 15px; color: #fff; box-shadow: 0 0 15px rgba(0,0,0,0.9); }
-        .chance-center span { font-size: 8px; color: #ffaa00; letter-spacing: 1px; }
+        .wheel-box { position: relative; width: 180px; height: 180px; margin: 10px 0; display: flex; align-items: center; justify-content: center; }
+        .pointer-top { position: absolute; top: -8px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent; border-top: 15px solid #ffcc00; z-index: 10; }
+        canvas { border-radius: 50%; box-shadow: 0 0 20px rgba(0,0,0,0.8); transition: transform 4s cubic-bezier(0.15, 0.9, 0.15, 1); }
+        .chance-center { position: absolute; width: 55px; height: 55px; background: #0c0e12; border: 2px solid #ffcc00; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; color: #fff; }
 
-        /* СЕТКА С ПРЕДМЕТАМИ */
         .grid-header { width: 100%; max-width: 420px; font-size: 11px; color: #7a8b9e; font-weight: bold; text-transform: uppercase; margin-bottom: 6px; }
-        .items-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; width: 100%; max-width: 420px; max-height: 180px; overflow-y: auto; background: #12151c; border: 1px solid #262c38; padding: 8px; border-radius: 10px; margin-bottom: 12px; }
-        .grid-item { background: #181d26; border: 1px solid #2d3645; border-radius: 6px; padding: 5px; text-align: center; cursor: pointer; transition: 0.2s; }
-        .grid-item:hover { border-color: #ffaa00; background: #222936; }
-        .grid-item img { width: 36px; height: 36px; object-fit: contain; }
+        .items-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; width: 100%; max-width: 420px; max-height: 160px; overflow-y: auto; background: #12151c; border: 1px solid #262c38; padding: 8px; border-radius: 10px; margin-bottom: 12px; }
+        .grid-item { background: #181d26; border: 1px solid #2d3645; border-radius: 6px; padding: 5px; text-align: center; cursor: pointer; }
+        .grid-item:hover { border-color: #ffaa00; }
+        .grid-item img { width: 32px; height: 32px; object-fit: contain; }
         .grid-item p { font-size: 9px; font-weight: bold; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #bbb; }
 
-        /* КНОПКА */
-        .action-btn { width: 100%; max-width: 420px; padding: 14px; background: linear-gradient(180deg, #ffaa00 0%, #e67300 100%); border: none; border-radius: 8px; color: #000; font-size: 16px; font-weight: 900; text-transform: uppercase; cursor: pointer; box-shadow: 0 4px 20px rgba(255, 170, 0, 0.4); }
-
-        /* МОДАЛКИ И КЕЙС */
+        .action-btn { width: 100%; max-width: 420px; padding: 14px; background: linear-gradient(180deg, #ffaa00 0%, #e67300 100%); border: none; border-radius: 8px; color: #000; font-size: 16px; font-weight: 900; cursor: pointer; }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); flex-direction: column; align-items: center; justify-content: center; z-index: 100; padding: 15px; }
         .modal-card { background: #161b24; border: 1px solid #2d3645; padding: 20px; border-radius: 12px; max-width: 380px; width: 100%; text-align: center; }
-
-        /* CS2 CASE ROULETTE ANIMATION */
-        .case-container { position: relative; width: 100%; height: 90px; background: #0a0c10; border: 2px solid #ffaa00; border-radius: 8px; overflow: hidden; margin: 15px 0; }
-        .case-pointer { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 4px; height: 100%; background: #ff0055; z-index: 10; box-shadow: 0 0 10px #ff0055; }
-        .case-tape { display: flex; position: absolute; left: 0; top: 10px; transition: transform 5s cubic-bezier(0.1, 1, 0.1, 1); }
-        .case-item { width: 70px; height: 70px; background: #161b24; border: 1px solid #2d3645; border-radius: 6px; margin: 0 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; }
-        .case-item img { width: 35px; height: 35px; }
-        .case-item span { font-size: 10px; font-weight: bold; color: #ffaa00; margin-top: 2px; }
     </style>
 </head>
 <body>
 
-    <!-- ВЕРХНЯЯ ПАНЕЛЬ С ВВОДОМ НИКА И АВАТАРОМ -->
     <div class="header">
         <div class="nick-box">
             <span class="nick-label">ROBLOX НИКНЕЙМ</span>
-            <input type="text" id="robloxNick" class="nick-input" placeholder="Введите ваш ник..." oninput="updateAvatar()">
+            <input type="text" id="robloxNick" class="nick-input" placeholder="Введите ник..." oninput="onNickChange()">
         </div>
         <div class="avatar-container">
             <img id="userAvatar" src="https://tr.rbxcdn.com/30day-avatar-headshot-png/150/150/AvatarHeadshot/Png/noFilter">
         </div>
     </div>
 
-    <!-- РЕЖИМ ВЫБОРА (СТАВКА ИЛИ ЦЕЛЬ) -->
-    <div class="select-mode">
-        <div class="mode-btn active-bet" id="btnModeBet" onclick="setMode('bet')">Ваша Ставка</div>
-        <div class="mode-btn" id="btnModeTarget" onclick="setMode('target')">Цель Апгрейда</div>
+    <div class="bet-type-selector">
+        <div class="type-btn active" id="btnBetUnit" onclick="setBetType('unit')">Ставить Юнита</div>
+        <div class="type-btn" id="btnBetSouls" onclick="setBetType('souls')">Ставить Души</div>
     </div>
 
-    <!-- СЛОТЫ -->
+    <div class="souls-slider-box" id="soulsBox">
+        <label>Ставка: <span id="soulsVal">500</span> Souls</label>
+        <input type="range" id="soulsRange" min="100" max="4000" step="100" value="500" oninput="onSoulsSliderChange(this.value)">
+    </div>
+
     <div class="slots-wrapper">
-        <div class="slot-card bet" id="slotBet">
+        <div class="slot-card bet">
             <img id="imgBet" class="slot-img">
             <div id="titleBet" class="slot-name"></div>
         </div>
-        <div class="slot-card target" id="slotTarget">
+        <div class="slot-card target">
             <img id="imgTarget" class="slot-img">
             <div id="titleTarget" class="slot-name"></div>
         </div>
     </div>
 
-    <!-- КОЛЕСО CS2 -->
     <div class="wheel-box">
         <div class="pointer-top"></div>
-        <div class="chance-center"><div id="chanceNum">0%</div><span>ШАНС</span></div>
+        <div class="chance-center"><div id="chanceNum">0%</div></div>
         <canvas id="wheelCanvas" width="180" height="180"></canvas>
     </div>
 
-    <!-- ПРЕДМЕТЫ -->
-    <div class="grid-header">Доступные предметы:</div>
+    <div class="grid-header">Выберите цель апгрейда (Только Юниты):</div>
     <div class="items-grid" id="itemsGrid"></div>
 
     <button class="action-btn" onclick="startUpgradeProcess()">СДЕЛАТЬ АПГРЕЙД</button>
 
-    <!-- МОДАЛКА ОПЛАТЫ -->
+    <!-- УВЕДОМЛЕНИЕ О ДОСТАВКЕ ПРИЗА (ДЛЯ ОФЛАЙНА) -->
+    <div class="modal" id="prizeDeliveredModal">
+        <div class="modal-card" style="border-color: #2ea043;">
+            <h2 style="color:#2ea043; font-size:20px; margin-bottom:10px;">🎉 ПРИЗ ДОСТАВЛЕН!</h2>
+            <p style="color:#aaa; font-size:13px; margin-bottom:15px;">ВАШ ПРИЗ УСПЕШНО ДОСТАВЛЕН:</p>
+            <div id="deliveredPrizeName" style="background:#111; color:#ffaa00; font-size:16px; font-weight:bold; padding:12px; border-radius:8px; margin-bottom:15px; border:1px solid #ffaa00;"></div>
+            <button class="action-btn" onclick="closePrizeModal()">ОТЛИЧНО!</button>
+        </div>
+    </div>
+
     <div class="modal" id="payModal">
         <div class="modal-card">
-            <h3 style="color:#ffaa00; margin-bottom:8px;">ПОЧТОВЫЙ ПЕРЕВОД</h3>
-            <p style="color:#aaa; font-size:12px;">Отправьте вашу ставку по почте в игре на ник:</p>
+            <h3 style="color:#ffaa00;">ПОЧТОВЫЙ ПЕРЕВОД</h3>
+            <p style="color:#aaa; font-size:12px; margin-top:6px;">Отправьте вашу ставку по почте на ник:</p>
             <div style="background:#000; color:#ffcc00; font-size:18px; font-weight:bold; padding:8px; border-radius:6px; margin:12px 0;">fntd2UPGRADER</div>
             <button class="action-btn" onclick="confirmPayment()">Я ОТПРАВИЛ!</button>
-        </div>
-    </div>
-
-    <!-- МОДАЛКА ОЖИДАНИЯ -->
-    <div class="modal" id="waitModal">
-        <div class="modal-card">
-            <h3 style="color:#ffaa00;">⏳ ПРОВЕРКА ПОЧТЫ</h3>
-            <p style="color:#aaa; font-size:12px; margin-top:8px;">Администратор проверяет внутриигровую почту...</p>
-        </div>
-    </div>
-
-    <!-- МОДАЛКА УТЕШИТЕЛЬНОГО КЕЙСА С ДУШАМИ -->
-    <div class="modal" id="caseModal">
-        <div class="modal-card">
-            <h3 style="color:#ff3355;">НЕУДАЧА!</h3>
-            <p style="color:#aaa; font-size:11px;">Крутится утешительный кейс с Душами!</p>
-            <div class="case-container">
-                <div class="case-pointer"></div>
-                <div class="case-tape" id="caseTape"></div>
-            </div>
-            <h4 id="caseResultText" style="color:#ffaa00; min-height:20px;"></h4>
         </div>
     </div>
 
@@ -141,97 +115,133 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
         const userId = tg.initDataUnsafe?.user?.id || Math.floor(Math.random()*1000000);
-        const tgUsername = tg.initDataUnsafe?.user?.username || "NoUsername";
 
-        // БАЗА ЮНИТОВ С ТВОЕЙ ССЫЛКОЙ
-        const FNTD2_ITEMS = [
-            { name: "500 Souls", val: 500, img: "https://i.imgur.com/v8tT1yA.png" },
-            { name: "1,000 Souls", val: 1000, img: "https://i.imgur.com/v8tT1yA.png" },
-            { name: "5,000 Souls", val: 5000, img: "https://i.imgur.com/v8tT1yA.png" },
-            { name: "Sole Survivor Withered Bonnie", val: 150000, img: "https://share.google/Ef0dw4vwR5OK8OFwv" }
+        // ИКОНКА ДУШ И ЮНИТА
+        const SOULS_IMG = "https://i.ibb.co/L53pG8F/souls.png";
+        const WITHERED_BONNIE_IMG = "https://share.google/Ef0dw4vwR5OK8OFwv";
+
+        const UNITS_LIST = [
+            { name: "Sole Survivor Withered Bonnie", val: 150000, img: WITHERED_BONNIE_IMG }
         ];
 
-        let selectedBet = FNTD2_ITEMS[0];
-        let selectedTarget = FNTD2_ITEMS[3];
-        let selectMode = 'bet';
+        let betType = 'unit';
+        let currentBet = UNITS_LIST[0];
+        let currentTarget = UNITS_LIST[0];
         let chance = 0;
+        let activePrizeId = null;
 
-        // ЗВУКОВОЙ ДВИЖОК
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        function playSound(freq, type, duration) {
+        // ПРОВЕРКА БАЗЫ ДАННЫХ ПРИ СТАРТЕ
+        async function loadUserData() {
             try {
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = type;
-                osc.frequency.value = freq;
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.start();
-                gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
-                osc.stop(audioCtx.currentTime + duration);
+                const res = await fetch(`/api/user_info/${userId}`);
+                const data = await res.json();
+                
+                // Восстанавливаем сохраненный ник
+                if(data.roblox_nick) {
+                    document.getElementById('robloxNick').value = data.roblox_nick;
+                    updateAvatar(data.roblox_nick);
+                }
+
+                // Проверяем, был ли выдан приз пока игрок был оффлайн
+                if(data.delivered_prize) {
+                    activePrizeId = data.delivered_prize.id;
+                    document.getElementById('deliveredPrizeName').innerText = data.delivered_prize.name;
+                    document.getElementById('prizeDeliveredModal').style.display = 'flex';
+                }
             } catch(e) {}
         }
 
-        // ИСПРАВЛЕННАЯ АВАТАРКА ROBLOX
-        let avatarTimeout;
-        function updateAvatar() {
-            clearTimeout(avatarTimeout);
+        async function closePrizeModal() {
+            document.getElementById('prizeDeliveredModal').style.display = 'none';
+            if(activePrizeId) {
+                await fetch('/api/claim_prize_notification', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ prize_id: activePrizeId })
+                });
+            }
+        }
+
+        let nickTimeout;
+        function onNickChange() {
             const nick = document.getElementById('robloxNick').value.trim();
+            clearTimeout(nickTimeout);
+            nickTimeout = setTimeout(() => {
+                updateAvatar(nick);
+                // Сохраняем в БД
+                fetch(`/api/user_info/${userId}`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ roblox_nick: nick })
+                });
+            }, 600);
+        }
+
+        async function updateAvatar(nick) {
             if(!nick) return;
-            avatarTimeout = setTimeout(async () => {
-                try {
-                    const userRes = await fetch(`https://users.roblox.com/v1/usernames/users`, {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({usernames: [nick], excludeBannedUsers: true})
-                    });
-                    const userData = await userRes.json();
-                    if(userData.data && userData.data.length > 0) {
-                        const uid = userData.data[0].id;
-                        const thumbRes = await fetch(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${uid}&size=150x150&format=Png&isCircular=true`);
-                        const thumbData = await thumbRes.json();
-                        if(thumbData.data && thumbData.data[0] && thumbData.data[0].imageUrl) {
-                            document.getElementById('userAvatar').src = thumbData.data[0].imageUrl;
-                        }
+            try {
+                const proxy = "https://corsproxy.io/?";
+                const userRes = await fetch(proxy + encodeURIComponent("https://users.roblox.com/v1/usernames/users"), {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({usernames: [nick], excludeBannedUsers: true})
+                });
+                const userData = await userRes.json();
+                if(userData.data?.[0]?.id) {
+                    const uid = userData.data[0].id;
+                    const thumbRes = await fetch(proxy + encodeURIComponent(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${uid}&size=150x150&format=Png&isCircular=true`));
+                    const thumbData = await thumbRes.json();
+                    if(thumbData.data?.[0]?.imageUrl) {
+                        document.getElementById('userAvatar').src = thumbData.data[0].imageUrl;
                     }
-                } catch(e) { console.error(e); }
-            }, 500);
+                }
+            } catch(e) {}
         }
 
-        function setMode(mode) {
-            selectMode = mode;
-            document.getElementById('btnModeBet').className = 'mode-btn ' + (mode === 'bet' ? 'active-bet' : '');
-            document.getElementById('btnModeTarget').className = 'mode-btn ' + (mode === 'target' ? 'active-target' : '');
+        function setBetType(type) {
+            betType = type;
+            document.getElementById('btnBetUnit').className = 'type-btn ' + (type === 'unit' ? 'active' : '');
+            document.getElementById('btnBetSouls').className = 'type-btn ' + (type === 'souls' ? 'active' : '');
+            
+            if(type === 'souls') {
+                document.getElementById('soulsBox').style.display = 'block';
+                const sVal = parseInt(document.getElementById('soulsRange').value);
+                currentBet = { name: `${sVal} Souls`, val: sVal, img: SOULS_IMG };
+            } else {
+                document.getElementById('soulsBox').style.display = 'none';
+                currentBet = UNITS_LIST[0];
+            }
+            updateSlots();
         }
 
-        // ОТРИСОВКА СЕТКИ ПРЕДМЕТОВ
-        const grid = document.getElementById('itemsGrid');
+        function onSoulsSliderChange(val) {
+            document.getElementById('soulsVal').innerText = val;
+            currentBet = { name: `${val} Souls`, val: parseInt(val), img: SOULS_IMG };
+            updateSlots();
+        }
+
         function renderGrid() {
+            const grid = document.getElementById('itemsGrid');
             grid.innerHTML = '';
-            FNTD2_ITEMS.forEach(item => {
+            UNITS_LIST.forEach(item => {
                 const card = document.createElement('div');
                 card.className = 'grid-item';
-                card.innerHTML = `<img src="${item.img}" onerror="this.onerror=null;this.src='https://i.imgur.com/v8tT1yA.png';"><p>${item.name}</p>`;
+                card.innerHTML = `<img src="${item.img}" onerror="this.src='${SOULS_IMG}'"><p>${item.name}</p>`;
                 card.onclick = () => {
-                    if(selectMode === 'bet') {
-                        selectedBet = item;
-                    } else {
-                        selectedTarget = item;
-                    }
+                    currentTarget = item;
                     updateSlots();
-                    playSound(600, 'sine', 0.05);
                 };
                 grid.appendChild(card);
             });
         }
 
         function updateSlots() {
-            document.getElementById('imgBet').src = selectedBet.img;
-            document.getElementById('titleBet').innerText = selectedBet.name;
-            document.getElementById('imgTarget').src = selectedTarget.img;
-            document.getElementById('titleTarget').innerText = selectedTarget.name;
+            document.getElementById('imgBet').src = currentBet.img;
+            document.getElementById('titleBet').innerText = currentBet.name;
+            document.getElementById('imgTarget').src = currentTarget.img;
+            document.getElementById('titleTarget').innerText = currentTarget.name;
 
-            let raw = (selectedBet.val / selectedTarget.val) * 85;
+            let raw = (currentBet.val / currentTarget.val) * 85;
             chance = Math.min(95, Math.max(0.1, raw)).toFixed(2);
             document.getElementById('chanceNum').innerText = chance + '%';
             drawWheel();
@@ -247,6 +257,7 @@
             ctx.beginPath(); ctx.moveTo(90, 90); ctx.arc(90, 90, 88, winAngle, 2 * Math.PI); ctx.fillStyle = "#da3633"; ctx.fill();
         }
 
+        loadUserData();
         renderGrid();
         updateSlots();
 
@@ -257,98 +268,7 @@
 
         async function confirmPayment() {
             document.getElementById('payModal').style.display = 'none';
-            document.getElementById('waitModal').style.display = 'flex';
-
-            await fetch('/api/create_bet', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    user_id: userId, tg_username: tgUsername,
-                    roblox_nick: document.getElementById('robloxNick').value,
-                    bet_item: selectedBet.name, target_item: selectedTarget.name, chance: chance
-                })
-            });
-
-            const poll = setInterval(async () => {
-                const res = await fetch(`/api/check_status/${userId}`);
-                const data = await res.json();
-                if(data.status === 'approved') {
-                    clearInterval(poll);
-                    document.getElementById('waitModal').style.display = 'none';
-                    runWheelSpin();
-                } else if(data.status === 'rejected') {
-                    clearInterval(poll);
-                    document.getElementById('waitModal').style.display = 'none';
-                    alert("Ставка не найдена на почте!");
-                }
-            }, 2000);
-        }
-
-        function runWheelSpin() {
-            const isWin = Math.random() * 100 <= chance;
-            let targetDegree = isWin ? Math.random() * (chance / 100 * 360) : (chance / 100 * 360) + Math.random() * ((100 - chance) / 100 * 360);
-            const totalRot = 360 * 5 + (270 - targetDegree);
-            canvas.style.transform = `rotate(${totalRot}deg)`;
-
-            let clicks = 0;
-            const clickInterval = setInterval(() => {
-                playSound(300 + clicks * 10, 'triangle', 0.03);
-                clicks++;
-                if(clicks > 25) clearInterval(clickInterval);
-            }, 150);
-
-            setTimeout(() => {
-                if(isWin) {
-                    playSound(800, 'sine', 0.5); playSound(1200, 'sine', 0.8);
-                    alert(`ПОЗДРАВЛЯЕМ С ПОБЕДОЙ!\n\nПредмет (${selectedTarget.name}) отправлен вам по почте в игре!`);
-                    fetch('/api/claim_win', {
-                        method: 'POST', headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({ user_id: userId, win_item: selectedTarget.name })
-                    });
-                } else {
-                    playSound(150, 'sawtooth', 0.4);
-                    openConsolationCase();
-                }
-            }, 4200);
-        }
-
-        // КЕЙС С ДУШАМИ ПРИ ПРОИГРЫШЕ
-        function openConsolationCase() {
-            document.getElementById('caseModal').style.display = 'flex';
-            const tape = document.getElementById('caseTape');
-            tape.innerHTML = '';
-            
-            const rand = Math.random() * 100;
-            let winSouls = 100;
-            if(rand <= 0.25) winSouls = 3000;
-            else if(rand <= 0.65) winSouls = 2500;
-            else if(rand <= 1.15) winSouls = 2000;
-            else if(rand <= 1.90) winSouls = 1500;
-            else if(rand <= 2.90) winSouls = 1000;
-            else if(rand <= 17.9) winSouls = 750;
-            else if(rand <= 42.9) winSouls = 500;
-            else if(rand <= 77.9) winSouls = 250;
-
-            for(let i = 0; i < 40; i++) {
-                const s = (i === 32) ? winSouls : [100,250,500,750][Math.floor(Math.random()*4)];
-                const item = document.createElement('div');
-                item.className = 'case-item';
-                item.innerHTML = `<img src="https://i.imgur.com/v8tT1yA.png"><span>${s} Souls</span>`;
-                tape.appendChild(item);
-            }
-
-            setTimeout(() => {
-                tape.style.transform = `translateX(-2300px)`;
-            }, 100);
-
-            setTimeout(() => {
-                playSound(900, 'sine', 0.4);
-                document.getElementById('caseResultText').innerText = `Вы выбили ${winSouls} Душ! Ожидайте начисление по почте.`;
-                fetch('/api/claim_win', {
-                    method: 'POST', headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ user_id: userId, win_item: `${winSouls} Утешительных Душ` })
-                });
-            }, 5200);
+            alert("Заявка отправлена администратору!");
         }
     </script>
 </body>
