@@ -14,7 +14,7 @@
         .nick-box { display: flex; flex-direction: column; width: 70%; }
         .nick-label { font-size: 10px; color: #ffaa00; text-transform: uppercase; font-weight: bold; margin-bottom: 2px; }
         .nick-input { background: #12151c; border: 1px solid #3a4454; color: #00ffcc; padding: 6px 10px; border-radius: 6px; outline: none; font-weight: bold; font-size: 13px; }
-        .avatar-container { width: 48px; height: 48px; border-radius: 50%; border: 2px solid #ffaa00; overflow: hidden; background: #12151c; box-shadow: 0 0 10px rgba(255,170,0,0.3); }
+        .avatar-container { width: 48px; height: 48px; border-radius: 50%; border: 2px solid #ffaa00; overflow: hidden; background: #12151c; box-shadow: 0 0 10px rgba(255,170,0,0.3); display: flex; align-items: center; justify-content: center; }
         .avatar-container img { width: 100%; height: 100%; object-fit: cover; }
 
         /* ВЫБОР РЕЖИМА ВЫБОРА */
@@ -38,12 +38,12 @@
         .chance-center { position: absolute; width: 60px; height: 60px; background: #0c0e12; border: 2px solid #ffcc00; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 900; font-size: 15px; color: #fff; box-shadow: 0 0 15px rgba(0,0,0,0.9); }
         .chance-center span { font-size: 8px; color: #ffaa00; letter-spacing: 1px; }
 
-        /* СЕТКА С ПРЕДМЕТАМИ ИЗ FNTD 2 WIKI */
+        /* СЕТКА С ПРЕДМЕТАМИ */
         .grid-header { width: 100%; max-width: 420px; font-size: 11px; color: #7a8b9e; font-weight: bold; text-transform: uppercase; margin-bottom: 6px; }
-        .items-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; width: 100%; max-width: 420px; max-height: 160px; overflow-y: auto; background: #12151c; border: 1px solid #262c38; padding: 8px; border-radius: 10px; margin-bottom: 12px; }
+        .items-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; width: 100%; max-width: 420px; max-height: 180px; overflow-y: auto; background: #12151c; border: 1px solid #262c38; padding: 8px; border-radius: 10px; margin-bottom: 12px; }
         .grid-item { background: #181d26; border: 1px solid #2d3645; border-radius: 6px; padding: 5px; text-align: center; cursor: pointer; transition: 0.2s; }
         .grid-item:hover { border-color: #ffaa00; background: #222936; }
-        .grid-item img { width: 32px; height: 32px; object-fit: contain; }
+        .grid-item img { width: 36px; height: 36px; object-fit: contain; }
         .grid-item p { font-size: 9px; font-weight: bold; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #bbb; }
 
         /* КНОПКА */
@@ -100,8 +100,8 @@
         <canvas id="wheelCanvas" width="180" height="180"></canvas>
     </div>
 
-    <!-- ПРЕДМЕТЫ ИЗ WIKI -->
-    <div class="grid-header">Предметы из FNTD 2 Wiki:</div>
+    <!-- ПРЕДМЕТЫ -->
+    <div class="grid-header">Доступные предметы:</div>
     <div class="items-grid" id="itemsGrid"></div>
 
     <button class="action-btn" onclick="startUpgradeProcess()">СДЕЛАТЬ АПГРЕЙД</button>
@@ -143,24 +143,20 @@
         const userId = tg.initDataUnsafe?.user?.id || Math.floor(Math.random()*1000000);
         const tgUsername = tg.initDataUnsafe?.user?.username || "NoUsername";
 
-        // БАЗА ПРЕДМЕТОВ СТОГО ИЗ FNTD 2 WIKI
+        // БАЗА ЮНИТОВ С ТВОЕЙ ССЫЛКОЙ
         const FNTD2_ITEMS = [
-            { name: "500 Souls", val: 500, img: "https://static.wikia.nocookie.net/five-nights-tower-defense/images/b/b3/Souls.png" },
-            { name: "1,000 Souls", val: 1000, img: "https://static.wikia.nocookie.net/five-nights-tower-defense/images/b/b3/Souls.png" },
-            { name: "5,000 Souls", val: 5000, img: "https://static.wikia.nocookie.net/five-nights-tower-defense/images/b/b3/Souls.png" },
-            { name: "Nightmarionne", val: 12000, img: "https://static.wikia.nocookie.net/five-nights-tower-defense/images/3/3a/Nightmarionne.png" },
-            { name: "Valkyrie Chica", val: 25000, img: "https://static.wikia.nocookie.net/five-nights-tower-defense/images/d/d8/ValkyrieChica.png" },
-            { name: "Shadow Bonnie", val: 50000, img: "https://static.wikia.nocookie.net/five-nights-tower-defense/images/8/83/ShadowBonnie.png" },
-            { name: "Glitched Puppet", val: 120000, img: "https://static.wikia.nocookie.net/five-nights-tower-defense/images/7/71/ApexPuppet.png" },
-            { name: "Apex Golden Freddy", val: 500000, img: "https://static.wikia.nocookie.net/five-nights-tower-defense/images/b/b5/ApexGoldenFreddy.png" }
+            { name: "500 Souls", val: 500, img: "https://i.imgur.com/v8tT1yA.png" },
+            { name: "1,000 Souls", val: 1000, img: "https://i.imgur.com/v8tT1yA.png" },
+            { name: "5,000 Souls", val: 5000, img: "https://i.imgur.com/v8tT1yA.png" },
+            { name: "Sole Survivor Withered Bonnie", val: 150000, img: "https://share.google/Ef0dw4vwR5OK8OFwv" }
         ];
 
         let selectedBet = FNTD2_ITEMS[0];
-        let selectedTarget = FNTD2_ITEMS[7];
-        let selectMode = 'bet'; // 'bet' или 'target'
+        let selectedTarget = FNTD2_ITEMS[3];
+        let selectMode = 'bet';
         let chance = 0;
 
-        // ЗВУКОВОЙ ДВИЖОК (WEB AUDIO API CS2 SOUNDS)
+        // ЗВУКОВОЙ ДВИЖОК
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playSound(freq, type, duration) {
             try {
@@ -176,7 +172,7 @@
             } catch(e) {}
         }
 
-        // АВАТАРКА ROBLOX
+        // ИСПРАВЛЕННАЯ АВАТАРКА ROBLOX
         let avatarTimeout;
         function updateAvatar() {
             clearTimeout(avatarTimeout);
@@ -184,17 +180,21 @@
             if(!nick) return;
             avatarTimeout = setTimeout(async () => {
                 try {
-                    const res = await fetch(`https://users.roblox.com/v1/usernames/users`, {
+                    const userRes = await fetch(`https://users.roblox.com/v1/usernames/users`, {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
                         body: JSON.stringify({usernames: [nick], excludeBannedUsers: true})
                     });
-                    const data = await res.json();
-                    if(data.data?.[0]?.id) {
-                        const uid = data.data[0].id;
-                        document.getElementById('userAvatar').src = `https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${uid}&size=150x150&format=Png&isCircular=true`;
+                    const userData = await userRes.json();
+                    if(userData.data && userData.data.length > 0) {
+                        const uid = userData.data[0].id;
+                        const thumbRes = await fetch(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${uid}&size=150x150&format=Png&isCircular=true`);
+                        const thumbData = await thumbRes.json();
+                        if(thumbData.data && thumbData.data[0] && thumbData.data[0].imageUrl) {
+                            document.getElementById('userAvatar').src = thumbData.data[0].imageUrl;
+                        }
                     }
-                } catch(e) {}
+                } catch(e) { console.error(e); }
             }, 500);
         }
 
@@ -204,23 +204,26 @@
             document.getElementById('btnModeTarget').className = 'mode-btn ' + (mode === 'target' ? 'active-target' : '');
         }
 
-        // ОТРИСОВКА СЕТКИ
+        // ОТРИСОВКА СЕТКИ ПРЕДМЕТОВ
         const grid = document.getElementById('itemsGrid');
-        FNTD2_ITEMS.forEach(item => {
-            const card = document.createElement('div');
-            card.className = 'grid-item';
-            card.innerHTML = `<img src="${item.img}"><p>${item.name}</p>`;
-            card.onclick = () => {
-                if(selectMode === 'bet') {
-                    selectedBet = item;
-                } else {
-                    selectedTarget = item;
-                }
-                updateSlots();
-                playSound(600, 'sine', 0.05);
-            };
-            grid.appendChild(card);
-        });
+        function renderGrid() {
+            grid.innerHTML = '';
+            FNTD2_ITEMS.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'grid-item';
+                card.innerHTML = `<img src="${item.img}" onerror="this.onerror=null;this.src='https://i.imgur.com/v8tT1yA.png';"><p>${item.name}</p>`;
+                card.onclick = () => {
+                    if(selectMode === 'bet') {
+                        selectedBet = item;
+                    } else {
+                        selectedTarget = item;
+                    }
+                    updateSlots();
+                    playSound(600, 'sine', 0.05);
+                };
+                grid.appendChild(card);
+            });
+        }
 
         function updateSlots() {
             document.getElementById('imgBet').src = selectedBet.img;
@@ -228,7 +231,6 @@
             document.getElementById('imgTarget').src = selectedTarget.img;
             document.getElementById('titleTarget').innerText = selectedTarget.name;
 
-            // Расчет математического шанса
             let raw = (selectedBet.val / selectedTarget.val) * 85;
             chance = Math.min(95, Math.max(0.1, raw)).toFixed(2);
             document.getElementById('chanceNum').innerText = chance + '%';
@@ -244,6 +246,8 @@
             ctx.beginPath(); ctx.moveTo(90, 90); ctx.arc(90, 90, 88, 0, winAngle); ctx.fillStyle = "#2ea043"; ctx.fill();
             ctx.beginPath(); ctx.moveTo(90, 90); ctx.arc(90, 90, 88, winAngle, 2 * Math.PI); ctx.fillStyle = "#da3633"; ctx.fill();
         }
+
+        renderGrid();
         updateSlots();
 
         function startUpgradeProcess() {
@@ -286,7 +290,6 @@
             const totalRot = 360 * 5 + (270 - targetDegree);
             canvas.style.transform = `rotate(${totalRot}deg)`;
 
-            // Звуки щелчков рулетки
             let clicks = 0;
             const clickInterval = setInterval(() => {
                 playSound(300 + clicks * 10, 'triangle', 0.03);
@@ -309,7 +312,7 @@
             }, 4200);
         }
 
-        // CS2 ROULETTE CASE FOR SOULS
+        // КЕЙС С ДУШАМИ ПРИ ПРОИГРЫШЕ
         function openConsolationCase() {
             document.getElementById('caseModal').style.display = 'flex';
             const tape = document.getElementById('caseTape');
@@ -326,12 +329,11 @@
             else if(rand <= 42.9) winSouls = 500;
             else if(rand <= 77.9) winSouls = 250;
 
-            // Генерируем ленту кейса
             for(let i = 0; i < 40; i++) {
                 const s = (i === 32) ? winSouls : [100,250,500,750][Math.floor(Math.random()*4)];
                 const item = document.createElement('div');
                 item.className = 'case-item';
-                item.innerHTML = `<img src="https://static.wikia.nocookie.net/five-nights-tower-defense/images/b/b3/Souls.png"><span>${s} Souls</span>`;
+                item.innerHTML = `<img src="https://i.imgur.com/v8tT1yA.png"><span>${s} Souls</span>`;
                 tape.appendChild(item);
             }
 
@@ -350,5 +352,5 @@
         }
     </script>
 </body>
-    </html>
+            </html>
     
