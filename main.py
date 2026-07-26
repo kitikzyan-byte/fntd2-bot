@@ -1,8 +1,9 @@
 import os
-import asyncio
+import threading
+import requests
 from flask import Flask, render_template, request, jsonify
 from aiogram import Bot, Dispatcher, types, F
-from aiogram.filters import CommandStart, Command
+from aiogram.filters import CommandStart
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
 
 # ================= НАСТРОЙКИ =================
@@ -46,21 +47,21 @@ def submit_upgrade():
     users_data[user_id]["bet"] = bet_info
     users_data[user_id]["status"] = "pending"
 
-    # Отправляем тебе в Телеграм сообщение с кнопками Принять / Отказать
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    loop.run_complete = True
-    
-    async def send_admin_notification():
-        kb = InlineKeyboardMarkup(inline_keyboard=[[
-            InlineKeyboardButton(text="✅ Принять", callback_data=f"approve_{user_id}"),
-            InlineKeyboardButton(text="❌ Отказать", callback_data=f"reject_{user_id}")
-        ]])
-        text = f'🔔 Пользователь "{roblox_nick}" отправил вам по почте "{bet_info}"!'
-        await bot.send_message(chat_id=ADMIN_ID, text=text, reply_markup=kb)
-
+    # Отправка тебе сообщения в Телеграм через стабильный HTTP API
     try:
-        asyncio.run(send_admin_notification())
+        text = f'🔔 Пользователь "{roblox_nick}" отправил вам по почте "{bet_info}"!'
+        keyboard = {
+            "inline_keyboard": [[
+                {"text": "✅ Принять", "callback_data": f"approve_{user_id}"},
+                {"text": "❌ Отказать", "callback_data": f"reject_{user_id}"}
+            ]]
+        }
+        url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+        requests.post(url, json={
+            "chat_id": ADMIN_ID,
+            "text": text,
+            "reply_markup": keyboard
+        }, timeout=5)
     except Exception as e:
         print("Ошибка отправки админу:", e)
     
@@ -108,16 +109,18 @@ async def callback_handler(call: types.CallbackQuery):
     
     await call.answer()
 
-import threading
 def run_flask():
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, use_reloader=False)
 
+import asyncio
+
 async def main():
+    # Запускаем Flask в отдельном потоке
     threading.Thread(target=run_flask, daemon=True).start()
     print("Бот и сервер запущены!")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
     asyncio.run(main())
-        
+    
