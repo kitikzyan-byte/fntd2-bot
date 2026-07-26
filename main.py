@@ -1,25 +1,20 @@
 import os
-import requests
+import asyncio
 from flask import Flask, render_template, request, jsonify
+from aiogram import Bot, Dispatcher, types, F
+from aiogram.filters import CommandStart, Command
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
 
-app = Flask(__name__)
+# ================= НАСТРОЙКИ =================
+BOT_TOKEN = "8653136894:AAHpu03Vx-ciIGfWdhlVFwzSCtMnWWkUcxw"
+SERVER_URL = "https://fntd2-bot.onrender.com"
+ADMIN_ID = 2092773964  # Твой Telegram ID
+# =============================================
 
-# Токен твоего бота и твой Telegram ID (куда присылать уведомления)
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "ТВОЙ_ТОКЕН_БОТА")
-ADMIN_CHAT_ID = os.getenv("ADMIN_CHAT_ID", "ТВОЙ_TELEGRAM_ID")
+app = Flask(__name__, template_folder="templates")
 
-# Временная база данных в памяти (для продакшна лучше заменить на SQLite/Postgres)
-users_db = {}
-pending_upgrades = {}
-
-def send_telegram_message(chat_id, text):
-    if not chat_id or chat_id == "ТВОЙ_TELEGRAM_ID":
-        return
-    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-    try:
-        requests.post(url, json={"chat_id": chat_id, "text": text})
-    except Exception as e:
-        print("Telegram API Error:", e)
+# База данных в памяти
+users_data = {} # { user_id: { "nick": "...", "bet": "...", "status": "none" } }
 
 @app.route('/')
 def index():
@@ -27,57 +22,102 @@ def index():
 
 @app.route('/api/user_info/<user_id>', methods=['GET', 'POST'])
 def user_info(user_id):
-    if user_id not in users_db:
-        users_db[user_id] = {
-            "roblox_nick": "",
-            "status": "waiting_approval", # waiting_approval, approved, rejected
-            "last_bet": ""
-        }
+    if user_id not in users_data:
+        users_data[user_id] = {"nick": "", "bet": "", "status": "none"}
     
     if request.method == 'POST':
-        data = request.json
+        data = request.json or {}
         if 'roblox_nick' in data:
-            users_db[user_id]["roblox_nick"] = data['roblox_nick']
-        return jsonify({"status": "success"})
+            users_data[user_id]["nick"] = data['roblox_nick']
+        return jsonify({"status": "ok"})
         
-    return jsonify(users_db[user_id])
+    return jsonify(users_data[user_id])
 
 @app.route('/api/submit_upgrade', methods=['POST'])
 def submit_upgrade():
-    data = request.json
+    data = request.json or {}
     user_id = str(data.get('user_id'))
     roblox_nick = data.get('roblox_nick', 'Неизвестно')
     bet_info = data.get('bet_info', 'Ставка')
     
-    users_db[user_id] = users_db.get(user_id, {})
-    users_db[user_id]["roblox_nick"] = roblox_nick
-    users_db[user_id]["last_bet"] = bet_info
-    users_db[user_id]["status"] = "pending"
+    if user_id not in users_data:
+        users_data[user_id] = {}
+    users_data[user_id]["nick"] = roblox_nick
+    users_data[user_id]["bet"] = bet_info
+    users_data[user_id]["status"] = "pending"
 
-    # Отправляем тебе уведомление в Telegram
-    msg = f'🔔 Новая ставка на апгрейд!\nПользователь "{roblox_nick}" отправил вам "{bet_info}".\n\nПодтвердите или отклоните в панели управления.'
-    send_telegram_message(ADMIN_CHAT_ID, msg)
+    # Отправляем тебе в Телеграм сообщение с кнопками Принять / Отказать
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_complete = True
+    
+    async def send_admin_notification():
+        kb = InlineKeyboardMarkup(inline_keyboard=[[
+            InlineKeyboardButton(text="✅ Принять", callback_data=f"approve_{user_id}"),
+            InlineKeyboardButton(text="❌ Отказать", callback_data=f"reject_{user_id}")
+        ]])
+        text = f'🔔 Пользователь "{roblox_nick}" отправил вам по почте "{bet_info}"!'
+        await bot.send_message(chat_id=ADMIN_ID, text=text, reply_markup=kb)
+
+    try:
+        asyncio.run(send_admin_notification())
+    except Exception as e:
+        print("Ошибка отправки админу:", e)
     
     return jsonify({"status": "sent"})
 
 @app.route('/api/check_status/<user_id>', methods=['GET'])
 def check_status(user_id):
-    user = users_db.get(str(user_id), {"status": "none"})
+    user = users_data.get(str(user_id), {"status": "none"})
     return jsonify({"status": user.get("status")})
 
 @app.route('/api/reset_status/<user_id>', methods=['POST'])
 def reset_status(user_id):
-    if str(user_id) in users_db:
-        users_db[str(user_id)]["status"] = "none"
+    if str(user_id) in users_data:
+        users_data[str(user_id)]["status"] = "none"
     return jsonify({"status": "reset"})
 
-# Пример эндпоинта для тебя (админа), чтобы подтвердить ставку через браузер или скрипт: /api/admin/approve/<user_id>
-@app.route('/api/admin/approve/<user_id>', methods=['GET'])
-def admin_approve(user_id):
-    if str(user_id) in users_db:
-        users_db[str(user_id)]["status"] = "approved"
-        return f"Ставка для пользователя {user_id} подтверждена! Теперь у него начнется апгрейд."
-    return "Пользователь не найден", 404
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+# --- TELEGRAM BOT ---
+bot = Bot(token=BOT_TOKEN)
+dp = Dispatcher()
+
+@dp.message(CommandStart())
+async def start_cmd(message: types.Message):
+    kb = InlineKeyboardMarkup(inline_keyboard=[[
+        InlineKeyboardButton(text="🎰 Открыть FNTD 2 UPGRADER", web_app=WebAppInfo(url=SERVER_URL))
+    ]])
+    await message.answer("Привет, улучшай своих юнитов в FNTD 2 UPGRADER!", reply_markup=kb)
+
+# Обработка нажатий на кнопки Принять / Отказать в Телеграме
+@dp.callback_query(F.data.startswith("approve_") | F.data.startswith("reject_"))
+async def callback_handler(call: types.CallbackQuery):
+    if call.from_user.id != ADMIN_ID:
+        await call.answer("У вас нет прав!", show_alert=True)
+        return
+
+    action, user_id = call.data.split("_")
+    
+    if user_id in users_data:
+        if action == "approve":
+            users_data[user_id]["status"] = "approved"
+            await call.message.edit_text(call.message.text + "\n\n✅ СТАВКА ПРИНЯТА")
+        else:
+            users_data[user_id]["status"] = "rejected"
+            await call.message.edit_text(call.message.text + "\n\n❌ СТАВКА ОТКЛОНЕНА")
+    
+    await call.answer()
+
+import threading
+def run_flask():
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, use_reloader=False)
+
+async def main():
+    threading.Thread(target=run_flask, daemon=True).start()
+    print("Бот и сервер запущены!")
+    await dp.start_polling(bot)
+
+if __name__ == "__main__":
+    asyncio.run(main())
+        
