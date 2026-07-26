@@ -3,17 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FNTD 2 Upgrader</title>
+    <title>FNTD 2 UPGRADER</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; user-select: none; }
         body { background: #0e1015; color: #fff; display: flex; flex-direction: column; align-items: center; padding: 12px; min-height: 100vh; }
+        
+        /* Блокировщик, пока не введет ник */
+        #authOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0e1015; z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; }
+        .auth-card { background: #161a23; border: 2px solid #ffaa00; padding: 25px; border-radius: 14px; max-width: 360px; width: 100%; }
+        .auth-card h2 { font-size: 16px; color: #ffaa00; margin-bottom: 12px; line-height: 1.4; }
+        .auth-card p { font-size: 12px; color: #aaa; margin-bottom: 15px; }
+        .auth-input { width: 100%; background: #12151c; border: 1px solid #3a4454; color: #00ffcc; padding: 10px; border-radius: 8px; outline: none; font-weight: bold; font-size: 14px; margin-bottom: 15px; text-align: center; }
+
         .header { width: 100%; max-width: 420px; display: flex; justify-content: space-between; align-items: center; background: #161a23; border: 1px solid #2a313d; padding: 10px; border-radius: 12px; margin-bottom: 12px; }
         .nick-box { display: flex; flex-direction: column; width: 70%; }
         .nick-label { font-size: 10px; color: #ffaa00; font-weight: bold; margin-bottom: 2px; }
         .nick-input { background: #12151c; border: 1px solid #3a4454; color: #00ffcc; padding: 6px 10px; border-radius: 6px; outline: none; font-weight: bold; font-size: 13px; }
-        .avatar-container { width: 48px; height: 48px; border-radius: 50%; border: 2px solid #ffaa00; overflow: hidden; background: #12151c; display: flex; align-items: center; justify-content: center; }
-        .avatar-container img { width: 100%; height: 100%; object-fit: cover; }
+        .avatar-container { width: 48px; height: 48px; border-radius: 50%; border: 2px solid #ffaa00; overflow: hidden; background: #fff; display: flex; align-items: center; justify-content: center; }
+        .avatar-container img { width: 80%; height: 80%; object-fit: contain; }
         
         .bet-type-selector { display: flex; gap: 8px; width: 100%; max-width: 420px; margin-bottom: 10px; }
         .type-btn { flex: 1; padding: 8px; background: #181d26; border: 1px solid #2d3645; color: #888; font-size: 11px; font-weight: bold; text-align: center; border-radius: 6px; cursor: pointer; text-transform: uppercase; }
@@ -27,22 +35,22 @@
         .slot-card { flex: 1; background: #161b24; border: 1px solid #2d3645; border-radius: 10px; padding: 8px; text-align: center; height: 100px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .slot-card.bet { border-color: #2ea043; }
         .slot-card.target { border-color: #ff3355; }
-        .slot-img { width: 42px; height: 42px; object-fit: contain; }
-        .slot-name { font-size: 10px; font-weight: bold; margin-top: 4px; color: #ddd; }
+        .slot-img { width: 45px; height: 45px; object-fit: contain; }
+        .slot-name { font-size: 9px; font-weight: bold; margin-top: 4px; color: #ddd; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
         
-        .wheel-box { position: relative; width: 180px; height: 180px; margin: 10px 0; display: flex; align-items: center; justify-content: center; }
+        .wheel-box { position: relative; width: 160px; height: 160px; margin: 10px 0; display: flex; align-items: center; justify-content: center; }
         .pointer-top { position: absolute; top: -8px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent; border-top: 15px solid #ffcc00; z-index: 10; }
-        canvas { border-radius: 50%; box-shadow: 0 0 20px rgba(0,0,0,0.8); transition: transform 4s cubic-bezier(0.15, 0.9, 0.15, 1); }
-        .chance-center { position: absolute; width: 55px; height: 55px; background: #0c0e12; border: 2px solid #ffcc00; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; color: #fff; }
+        canvas { border-radius: 50%; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
+        .chance-center { position: absolute; width: 50px; height: 50px; background: #0c0e12; border: 2px solid #ffcc00; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; font-size: 13px; color: #fff; }
         
         .grid-header { width: 100%; max-width: 420px; font-size: 11px; color: #7a8b9e; font-weight: bold; text-transform: uppercase; margin-bottom: 6px; }
-        .items-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; width: 100%; max-width: 420px; max-height: 160px; overflow-y: auto; background: #12151c; border: 1px solid #262c38; padding: 8px; border-radius: 10px; margin-bottom: 12px; }
-        .grid-item { background: #181d26; border: 1px solid #2d3645; border-radius: 6px; padding: 5px; text-align: center; cursor: pointer; }
+        .items-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; width: 100%; max-width: 420px; max-height: 150px; overflow-y: auto; background: #12151c; border: 1px solid #262c38; padding: 8px; border-radius: 10px; margin-bottom: 12px; }
+        .grid-item { background: #181d26; border: 1px solid #2d3645; border-radius: 6px; padding: 6px; text-align: center; cursor: pointer; }
         .grid-item:hover { border-color: #ffaa00; }
-        .grid-item img { width: 32px; height: 32px; object-fit: contain; }
-        .grid-item p { font-size: 9px; font-weight: bold; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #bbb; }
+        .grid-item img { width: 35px; height: 35px; object-fit: contain; }
+        .grid-item p { font-size: 8px; font-weight: bold; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #bbb; }
         
-        .action-btn { width: 100%; max-width: 420px; padding: 14px; background: linear-gradient(180deg, #ffaa00 0%, #e67300 100%); border: none; border-radius: 8px; color: #000; font-size: 16px; font-weight: 900; cursor: pointer; }
+        .action-btn { width: 100%; max-width: 420px; padding: 14px; background: linear-gradient(180deg, #ffaa00 0%, #e67300 100%); border: none; border-radius: 8px; color: #000; font-size: 15px; font-weight: 900; cursor: pointer; }
         
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); flex-direction: column; align-items: center; justify-content: center; z-index: 100; padding: 15px; }
         .modal-card { background: #161b24; border: 1px solid #2d3645; padding: 20px; border-radius: 12px; max-width: 380px; width: 100%; text-align: center; }
@@ -50,13 +58,23 @@
 </head>
 <body>
 
+    <!-- Окно авторизации / приветствия -->
+    <div id="authOverlay">
+        <div class="auth-card">
+            <h2>Привет, улучшай своих юнитов в FNTD 2 UPGRADER!</h2>
+            <p>Введите ваш Roblox ник для доступа к апгрейдеру:</p>
+            <input type="text" id="authNickInput" class="auth-input" placeholder="Ваш ник...">
+            <button class="action-btn" onclick="submitAuthNick()">ВОЙТИ</button>
+        </div>
+    </div>
+
     <div class="header">
         <div class="nick-box">
             <span class="nick-label">ROBLOX НИКНЕЙМ</span>
-            <input type="text" id="robloxNick" class="nick-input" placeholder="Введите ник..." oninput="onNickChange()">
+            <input type="text" id="robloxNick" class="nick-input" disabled>
         </div>
         <div class="avatar-container">
-            <img id="userAvatar" src="https://tr.rbxcdn.com/30day-avatar-headshot-png/150/150/AvatarHeadshot/Png/noFilter">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Roblox_player_icon_black.svg/120px-Roblox_player_icon_black.svg.png">
         </div>
     </div>
 
@@ -84,101 +102,116 @@
     <div class="wheel-box">
         <div class="pointer-top"></div>
         <div class="chance-center"><div id="chanceNum">0%</div></div>
-        <canvas id="wheelCanvas" width="180" height="180"></canvas>
+        <canvas id="wheelCanvas" width="160" height="160"></canvas>
     </div>
 
-    <div class="grid-header">Выберите цель (Только Юниты):</div>
+    <div class="grid-header">Выберите цель (Юниты):</div>
     <div class="items-grid" id="itemsGrid"></div>
 
     <button class="action-btn" onclick="startUpgradeProcess()">СДЕЛАТЬ АПГРЕЙД</button>
 
-    <!-- ВСПЛЫВАЮЩЕЕ ОКНО ДЛЯ ПРИЗА ИЗ ОФЛАЙНА -->
-    <div class="modal" id="prizeDeliveredModal">
-        <div class="modal-card" style="border-color: #2ea043;">
-            <h2 style="color:#2ea043; font-size:20px; margin-bottom:10px;">🎉 ПРИЗ ДОСТАВЛЕН!</h2>
-            <p style="color:#aaa; font-size:13px; margin-bottom:15px;">ВАШ ПРИЗ УСПЕШНО ДОСТАВЛЕН НА АККАУНТ:</p>
-            <div id="deliveredPrizeName" style="background:#111; color:#ffaa00; font-size:16px; font-weight:bold; padding:12px; border-radius:8px; margin-bottom:15px; border:1px solid #ffaa00;"></div>
-            <button class="action-btn" onclick="closePrizeModal()">ОТЛИЧНО!</button>
+    <!-- Модалка почтового перевода -->
+    <div class="modal" id="payModal">
+        <div class="modal-card">
+            <h3 style="color:#ffaa00; margin-bottom:8px;">ПОЧТОВЫЙ ПЕРЕВОД</h3>
+            <p style="color:#aaa; font-size:12px; margin-bottom:10px;">ОТПРАВЬТЕ СТАВКУ ПО ПОЧТЕ ПОЛЬЗОВАТЕЛЮ</p>
+            <div style="background:#000; color:#ffcc00; font-size:16px; font-weight:bold; padding:10px; border-radius:6px; margin:10px 0; border:1px solid #ffcc00;">fntd2UPGRADER</div>
+            <p style="color:#666; font-size:10px; margin-bottom:15px;">После отправки нажмите кнопку ниже и ожидайте подтверждения.</p>
+            <button class="action-btn" onclick="confirmPaymentSent()">Я ОТПРАВИЛ!</button>
         </div>
     </div>
 
-    <div class="modal" id="payModal">
+    <!-- Модалка ожидания подтверждения -->
+    <div class="modal" id="waitingModal">
         <div class="modal-card">
-            <h3 style="color:#ffaa00;">ПОЧТОВЫЙ ПЕРЕВОД</h3>
-            <p style="color:#aaa; font-size:12px; margin-top:6px;">Отправьте вашу ставку по почте на ник:</p>
-            <div style="background:#000; color:#ffcc00; font-size:18px; font-weight:bold; padding:8px; border-radius:6px; margin:12px 0;">fntd2UPGRADER</div>
-            <button class="action-btn" onclick="confirmPayment()">Я ОТПРАВИЛ!</button>
+            <h3 style="color:#00ffcc; margin-bottom:10px;">ОЖИДАНИЕ ПРОВЕРКИ</h3>
+            <p style="color:#aaa; font-size:12px; line-height: 1.4;">Администратор проверяет вашу ставку. Пожалуйста, подождите...</p>
+        </div>
+    </div>
+
+    <!-- Модалка успешного подтверждения (перед запуском рулетки) -->
+    <div class="modal" id="approvedModal">
+        <div class="modal-card" style="border-color: #2ea043;">
+            <h2 style="color:#2ea043; font-size:16px; margin-bottom:12px;">🎉 СТАВКА ПРИНЯТА!</h2>
+            <p style="color:#fff; font-size:12px; margin-bottom:15px; line-height: 1.4;">АПГРЕЙД НАЧНЕТСЯ ПОСЛЕ ЗАКРЫТИЯ ЭТОГО СООБЩЕНИЯ</p>
+            <button class="action-btn" onclick="closeApprovedAndStart()">НАЧАТЬ АПГРЕЙД</button>
         </div>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-        // Получаем ID пользователя или ставим 123456789 для тестов
-        const userId = tg.initDataUnsafe?.user?.id || 123456789;
+        const userId = tg.initDataUnsafe?.user?.id || Math.floor(Math.random() * 1000000);
 
-        // РАБОЧИЕ ССЫЛКИ
-        const SOULS_IMG = "https://cdn-icons-png.flaticon.com/512/868/868681.png";
-        const WITHERED_BONNIE_IMG = "https://cdn-icons-png.flaticon.com/512/4333/4333609.png";
+        const PROXY = "https://wsrv.nl/?url=";
+        const SOULS_IMG = PROXY + "cdn-icons-png.flaticon.com/512/868/868681.png";
+        const DEFAULT_IMG = PROXY + "static.wikia.nocookie.net/fnaf-tower-defense/images/a/a2/Withered_Bonnie.png";
 
+        // Полный список всех юнитов, запрошенных пользователем
         const UNITS_LIST = [
-            { name: "Sole Survivor Withered Bonnie", val: 150000, img: WITHERED_BONNIE_IMG }
+            { name: "Nature Reclaimed Foxy", val: 200000, img: DEFAULT_IMG },
+            { name: "Afterbite Withered Golden Freddy", val: 190000, img: DEFAULT_IMG },
+            { name: "Deep Sea Calamity Endo", val: 180000, img: DEFAULT_IMG },
+            { name: "Foxy.EXE", val: 170000, img: DEFAULT_IMG },
+            { name: "Commander Withered Freddy", val: 160000, img: DEFAULT_IMG },
+            { name: "Fathomless Withered Foxy", val: 155000, img: DEFAULT_IMG },
+            { name: "Lorekeeper Shadow Bonnie", val: 150000, img: DEFAULT_IMG },
+            { name: "Music Man", val: 140000, img: DEFAULT_IMG },
+            { name: "Funtime Chica", val: 130000, img: DEFAULT_IMG },
+            { name: "Firework Shadow Freddy", val: 120000, img: DEFAULT_IMG },
+            { name: "Showtime Freddy", val: 110000, img: DEFAULT_IMG },
+            { name: "Nightmare Shadow Bonnie", val: 105000, img: DEFAULT_IMG },
+            { name: "Toy Foxy", val: 100000, img: DEFAULT_IMG },
+            { name: "Molten Freddy", val: 95000, img: DEFAULT_IMG },
+            { name: "Rockstar Foxy", val: 90000, img: DEFAULT_IMG },
+            { name: "Ignited Burst Withered Freddy", val: 85000, img: DEFAULT_IMG },
+            { name: "Fazman", val: 80000, img: DEFAULT_IMG },
+            { name: "Landslide Funtime Foxy", val: 75000, img: DEFAULT_IMG },
+            { name: "Elizabeth", val: 70000, img: DEFAULT_IMG },
+            { name: "Exotic Butters", val: 65000, img: DEFAULT_IMG },
+            { name: "Starfarer Princess", val: 60000, img: DEFAULT_IMG },
+            { name: "Hag Withered Chica", val: 55000, img: DEFAULT_IMG },
+            { name: "Freddles", val: 50000, img: DEFAULT_IMG },
+            { name: "Psychic Friend Fredbear", val: 45000, img: DEFAULT_IMG },
+            { name: "Nightmare Chica", val: 40000, img: DEFAULT_IMG },
+            { name: "Tarnished Springbonnie", val: 35000, img: DEFAULT_IMG },
+            { name: "Follow Me", val: 30000, img: DEFAULT_IMG },
+            { name: "Phantom Mangle", val: 25000, img: DEFAULT_IMG },
+            { name: "Krampus Purple Guy", val: 22000, img: DEFAULT_IMG },
+            { name: "Jack-O-Bonnie", val: 20000, img: DEFAULT_IMG },
+            { name: "Endo 02", val: 18000, img: DEFAULT_IMG },
+            { name: "Withered Foxy", val: 15000, img: DEFAULT_IMG },
+            { name: "Shadow Freddy", val: 12000, img: DEFAULT_IMG },
+            { name: "Candy Cadet", val: 10000, img: DEFAULT_IMG },
+            { name: "Lolbit", val: 8000, img: DEFAULT_IMG },
+            { name: "Phone Dude", val: 6000, img: DEFAULT_IMG },
+            { name: "Mangle", val: 5000, img: DEFAULT_IMG },
+            { name: "Frozen King Foxy", val: 4000, img: DEFAULT_IMG },
+            { name: "Headless Horseman Mangle", val: 3000, img: DEFAULT_IMG },
+            { name: "Yeti Oni Bonnie", val: 2000, img: DEFAULT_IMG },
+            { name: "Gaia Chica", val: 1000, img: DEFAULT_IMG }
         ];
 
         let betType = 'unit';
-        let currentBet = UNITS_LIST[0];
+        let currentBet = UNITS_LIST[UNITS_LIST.length - 1];
         let currentTarget = UNITS_LIST[0];
         let chance = 0;
-        let activePrizeId = null;
+        let statusPollInterval = null;
 
-        // Загружаем данные юзера (ник и призы)
-        async function loadUserData() {
-            try {
-                const res = await fetch(`/api/user_info/${userId}`);
-                const data = await res.json();
-                
-                if(data.roblox_nick) {
-                    document.getElementById('robloxNick').value = data.roblox_nick;
-                }
+        function submitAuthNick() {
+            const nick = document.getElementById('authNickInput').value.trim();
+            if(!nick) return alert("Пожалуйста, введите ник!");
+            
+            document.getElementById('robloxNick').value = nick;
+            document.getElementById('authOverlay').style.display = 'none';
 
-                // Если есть приз - показываем окно
-                if(data.delivered_prize) {
-                    activePrizeId = data.delivered_prize.id;
-                    document.getElementById('deliveredPrizeName').innerText = data.delivered_prize.name;
-                    document.getElementById('prizeDeliveredModal').style.display = 'flex';
-                }
-            } catch(e) {
-                console.error("Ошибка загрузки данных:", e);
-            }
+            fetch(`/api/user_info/${userId}`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ roblox_nick: nick })
+            });
         }
 
-        // Закрыть окно с призом
-        async function closePrizeModal() {
-            document.getElementById('prizeDeliveredModal').style.display = 'none';
-            if(activePrizeId) {
-                await fetch('/api/claim_prize_notification', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ prize_id: activePrizeId })
-                });
-            }
-        }
-
-        // Сохранение ника
-        let nickTimeout;
-        function onNickChange() {
-            const nick = document.getElementById('robloxNick').value.trim();
-            clearTimeout(nickTimeout);
-            nickTimeout = setTimeout(() => {
-                fetch(`/api/user_info/${userId}`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ roblox_nick: nick })
-                });
-            }, 500);
-        }
-
-        // Переключение Души/Юниты
         function setBetType(type) {
             betType = type;
             document.getElementById('btnBetUnit').className = 'type-btn ' + (type === 'unit' ? 'active' : '');
@@ -190,26 +223,24 @@
                 currentBet = { name: `${sVal} Souls`, val: sVal, img: SOULS_IMG };
             } else {
                 document.getElementById('soulsBox').style.display = 'none';
-                currentBet = UNITS_LIST[0]; // Возвращаем юнита по умолчанию
+                currentBet = UNITS_LIST[UNITS_LIST.length - 1];
             }
             updateSlots();
         }
 
-        // Ползунок душ
         function onSoulsSliderChange(val) {
             document.getElementById('soulsVal').innerText = val;
             currentBet = { name: `${val} Souls`, val: parseInt(val), img: SOULS_IMG };
             updateSlots();
         }
 
-        // Отрисовка сетки
         function renderGrid() {
             const grid = document.getElementById('itemsGrid');
             grid.innerHTML = '';
             UNITS_LIST.forEach(item => {
                 const card = document.createElement('div');
                 card.className = 'grid-item';
-                card.innerHTML = `<img src="${item.img}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/107/107106.png'"><p>${item.name}</p>`;
+                card.innerHTML = `<img src="${item.img}"><p>${item.name}</p>`;
                 card.onclick = () => {
                     currentTarget = item;
                     updateSlots();
@@ -218,7 +249,6 @@
             });
         }
 
-        // Обновление рулетки
         function updateSlots() {
             document.getElementById('imgBet').src = currentBet.img;
             document.getElementById('titleBet').innerText = currentBet.name;
@@ -235,38 +265,63 @@
         const ctx = canvas.getContext('2d');
 
         function drawWheel() {
-            ctx.clearRect(0, 0, 180, 180);
+            ctx.clearRect(0, 0, 160, 160);
             const winAngle = (chance / 100) * 2 * Math.PI;
             
-            // Зеленая зона (победа)
-            ctx.beginPath(); 
-            ctx.moveTo(90, 90); 
-            ctx.arc(90, 90, 88, 0, winAngle); 
-            ctx.fillStyle = "#2ea043"; 
-            ctx.fill();
-            
-            // Красная зона (проигрыш)
-            ctx.beginPath(); 
-            ctx.moveTo(90, 90); 
-            ctx.arc(90, 90, 88, winAngle, 2 * Math.PI); 
-            ctx.fillStyle = "#da3633"; 
-            ctx.fill();
+            ctx.beginPath(); ctx.moveTo(80, 80); ctx.arc(80, 80, 78, 0, winAngle); ctx.fillStyle = "#2ea043"; ctx.fill();
+            ctx.beginPath(); ctx.moveTo(80, 80); ctx.arc(80, 80, 78, winAngle, 2 * Math.PI); ctx.fillStyle = "#da3633"; ctx.fill();
         }
 
-        loadUserData();
         renderGrid();
         updateSlots();
 
         function startUpgradeProcess() {
-            if(!document.getElementById('robloxNick').value) return alert("Введите Roblox ник!");
             document.getElementById('payModal').style.display = 'flex';
         }
 
-        function confirmPayment() {
+        async function confirmPaymentSent() {
             document.getElementById('payModal').style.display = 'none';
-            alert("Заявка успешно отправлена!");
+            document.getElementById('waitingModal').style.display = 'flex';
+
+            const nick = document.getElementById('robloxNick').value;
+            await fetch('/api/submit_upgrade', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    user_id: userId,
+                    roblox_nick: nick,
+                    bet_info: currentBet.name
+                })
+            });
+
+            // Начинаем опрос статуса подтверждения от админа
+            statusPollInterval = setInterval(checkAdminStatus, 3000);
+        }
+
+        async function checkAdminStatus() {
+            try {
+                const res = await fetch(`/api/check_status/${userId}`);
+                const data = await res.json();
+                
+                if (data.status === 'approved') {
+                    clearInterval(statusPollInterval);
+                    document.getElementById('waitingModal').style.display = 'none';
+                    document.getElementById('approvedModal').style.display = 'flex';
+                }
+            } catch(e) {}
+        }
+
+        async function closeApprovedAndStart() {
+            document.getElementById('approvedModal').style.display = 'none';
+            
+            // Сбрасываем статус на бэкенде
+            await fetch(`/api/reset_status/${userId}`, { method: 'POST' });
+
+            // Запускаем анимацию рулетки
+            alert("🎰 Апгрейд запущен! Удачи!");
+            // Здесь можно добавить логику кручения рулетки
         }
     </script>
 </body>
-                </html>
-                
+</html>
+               
