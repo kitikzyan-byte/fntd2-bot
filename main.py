@@ -1,155 +1,141 @@
-import asyncio
 import os
-import json
-import aiohttp
+import sqlite3
 from flask import Flask, render_template, request, jsonify
-from aiogram import Bot, Dispatcher, F, Router
+from aiogram import Bot, Dispatcher, Router, types
 from aiogram.filters import CommandStart
-from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
 
-BOT_TOKEN = "8653136894:AAHpu03Vx-ciIGfWdhlVFwzSCtMnWWkUcxw"
-ADMIN_ID = 2092773964
-# Render автоматически предоставит URL, либо используем локальный
+BOT_TOKEN = os.getenv("BOT_TOKEN", "YOUR_BOT_TOKEN")
+ADMIN_ID = int(os.getenv("ADMIN_ID", "123456789"))
 SERVER_URL = "https://fntd2-bot.onrender.com"
 
 app = Flask(__name__, template_folder="templates")
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 router = Router()
-dp.include_router(router)
 
-# Хранилище сессий в памяти (так как процесс один, всё работает мгновенно)
-GAMES = {}
+# --- ИНИЦИАЛИЗА БАЗЫ ДАННЫХ (SQLite) ---
+DB_NAME = "database.db"
 
-# ================= FLASK ROUTES =================
+def init_db():
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    # Таблица пользователей
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            user_id INTEGER PRIMARY KEY,
+            roblox_nick TEXT
+        )
+    ''')
+    # Таблица незабранных/доставленных призов
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS pending_prizes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            prize_name TEXT,
+            status TEXT DEFAULT 'pending'
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+init_db()
+
+# --- МАРШРУТЫ FLASK ---
 
 @app.route('/')
 def index():
     return render_template('index.html')
 
+# Сохранение или получение ника
+@app.route('/api/user_info/<int:user_id>', methods=['GET', 'POST'])
+def user_info(user_id):
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    
+    if request.method == 'POST':
+        data = request.json
+        nick = data.get('roblox_nick', '')
+        cursor.execute('INSERT OR REPLACE INTO users (user_id, roblox_nick) VALUES (?, ?)', (user_id, nick))
+        conn.commit()
+        conn.close()
+        return jsonify({"status": "ok"})
+    
+    cursor.execute('SELECT roblox_nick FROM users WHERE user_id = ?', (user_id,))
+    row = cursor.fetchone()
+    
+    # Проверяем, есть ли доставка приза для показывания всплывашки
+    cursor.execute('SELECT id, prize_name FROM pending_prizes WHERE user_id = ? AND status = "delivered"', (user_id,))
+    delivered_prize = cursor.fetchone()
+    
+    conn.close()
+    
+    return jsonify({
+        "roblox_nick": row[0] if row else "",
+        "delivered_prize": {"id": delivered_prize[0], "name": delivered_prize[1]} if delivered_prize else None
+    })
+
+# Подтверждение получения уведомления о призе
+@app.route('/api/claim_prize_notification', methods=['POST'])
+def claim_prize_notification():
+    data = request.json
+    prize_id = data.get('prize_id')
+    if prize_id:
+        conn = sqlite3.connect(DB_NAME)
+        cursor = conn.cursor()
+        cursor.execute('DELETE FROM pending_prizes WHERE id = ?', (prize_id,))
+        conn.commit()
+        conn.close()
+    return jsonify({"status": "ok"})
+
+# Создание ставки администратору
 @app.route('/api/create_bet', methods=['POST'])
 def create_bet():
     data = request.json
-    user_id = str(data.get('user_id'))
-    roblox_nick = data.get('roblox_nick')
-    tg_username = data.get('tg_username', 'Не указан')
-    bet_item = data.get('bet_item')
-    target_item = data.get('target_item')
-    chance = data.get('chance')
-
-    GAMES[user_id] = {
-        "status": "pending_admin",
-        "roblox_nick": roblox_nick,
-        "tg_username": tg_username,
-        "bet_item": bet_item,
-        "target_item": target_item,
-        "chance": chance,
-        "prize": None
-    }
-
-    # Отправляем уведу админу
-    kb = InlineKeyboardMarkup(inline_keyboard=[[
-        InlineKeyboardButton(text="✅ Подтвердить почту", callback_data=f"approve:{user_id}"),
-        InlineKeyboardButton(text="❌ Отклонить", callback_data=f"reject:{user_id}")
-    ]])
-
-    asyncio.run_coroutine_threadsafe(
-        bot.send_message(
-            ADMIN_ID,
-            f"📩 **НОВАЯ СТАВКА В FNTD 2 UPGRADER!**\n\n"
-            f"🎮 **Roblox Ник:** `{roblox_nick}`\n"
-            f"📱 **TG:** @{tg_username} (ID: `{user_id}`)\n\n"
-            f"📥 **Ставит:** `{bet_item}`\n"
-            f"🎯 **Хочет получить:** `{target_item}`\n"
-            f"🎲 **Шанс:** `{chance}%`\n\n"
-            f"📌 Проверьте почту от `{roblox_nick}` на нике **fntd2UPGRADER**!",
-            reply_markup=kb,
-            parse_mode="Markdown"
-        ),
-        loop
-    )
-
-    return jsonify({"status": "ok"})
-
-@app.route('/api/check_status/<user_id>', methods=['GET'])
-def check_status(user_id):
-    game = GAMES.get(str(user_id))
-    if not game:
-        return jsonify({"status": "not_found"})
-    return jsonify({"status": game["status"]})
-
-@app.route('/api/claim_win', methods=['POST'])
-def claim_win():
-    data = request.json
-    user_id = str(data.get('user_id'))
-    win_item = data.get('win_item')
+    user_id = data['user_id']
+    roblox_nick = data['roblox_nick']
     
-    game = GAMES.get(user_id)
-    if game:
-        kb = InlineKeyboardMarkup(inline_keyboard=[[
-            InlineKeyboardButton(text="🎁 ПРИЗ ВЫДАН В ИГРЕ", callback_data=f"delivered:{user_id}")
-        ]])
-        
-        asyncio.run_coroutine_threadsafe(
-            bot.send_message(
-                ADMIN_ID,
-                f"🎉 **ПОЛЬЗОВАТЕЛЬ ВЫИГРАЛ В АПГРЕЙДЕРЕ!**\n\n"
-                f"🎮 **Roblox Ник:** `{game['roblox_nick']}`\n"
-                f"📱 **TG:** @{game['tg_username']}\n"
-                f"🏆 **Выигрыш:** `{win_item}`\n\n"
-                f"Отправьте приз по почте и нажмите кнопку ниже!",
-                reply_markup=kb,
-                parse_mode="Markdown"
-            ),
-            loop
-        )
-    return jsonify({"status": "ok"})
+    # Сохраняем ник
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute('INSERT OR REPLACE INTO users (user_id, roblox_nick) VALUES (?, ?)', (user_id, roblox_nick))
+    conn.commit()
+    conn.close()
+    
+    # Регистрация заявки
+    return jsonify({"status": "pending"})
 
-# ================= TELEGRAM BOT HANDLERS =================
+# АДМИН-АПИ: Выдача приза в офлайн пользователю
+@app.route('/api/admin/give_prize', methods=['POST'])
+def admin_give_prize():
+    data = request.json
+    user_id = data.get('user_id')
+    prize_name = data.get('prize_name')
+    
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute('INSERT INTO pending_prizes (user_id, prize_name, status) VALUES (?, ?, "delivered")', (user_id, prize_name))
+    conn.commit()
+    conn.close()
+    return jsonify({"status": "success", "message": f"Приз {prize_name} записан юзеру {user_id}"})
+
+# --- AIOGRAM BOT ---
 
 @router.message(CommandStart())
-async def cmd_start(message: Message):
+def start_cmd(message: types.Message):
     kb = InlineKeyboardMarkup(inline_keyboard=[[
-        InlineKeyboardButton(text="🎰 ОТКРЫТЬ FNTD 2 UPGRADER", web_app=WebAppInfo(url=SERVER_URL))
+        InlineKeyboardButton(text="🎰 Открыть FNTD 2 Upgrader", web_app=WebAppInfo(url=SERVER_URL))
     ]])
-    await message.answer(
-        "ДОБРО ПОЖАЛОВАТЬ В FNTD 2 UPGRADER, УЛУЧШАЙ СВОИХ ЮНИТОВ, УДВАИВАЙ ИХ, И ЗАРАБАТЫВАЙ ДУШИ!",
-        reply_markup=kb
-    )
+    message.answer("Привет! Нажми на кнопку ниже, чтобы открыть апгрейдер:", reply_markup=kb)
 
-@router.callback_query(F.data.startswith("approve:"))
-async def approve(cb: CallbackQuery):
-    uid = cb.data.split(":")[1]
-    if uid in GAMES:
-        GAMES[uid]["status"] = "approved"
-        await cb.message.edit_text(f"{cb.message.text}\n\n🟢 **ПОЧТА ПОДТВЕРЖДЕНА! КРУТИТ.**")
-
-@router.callback_query(F.data.startswith("reject:"))
-async def reject(cb: CallbackQuery):
-    uid = cb.data.split(":")[1]
-    if uid in GAMES:
-        GAMES[uid]["status"] = "rejected"
-        await cb.message.edit_text(f"{cb.message.text}\n\n🔴 **ОТКЛОНЕНО.**")
-
-@router.callback_query(F.data.startswith("delivered:"))
-async def delivered(cb: CallbackQuery):
-    uid = cb.data.split(":")[1]
-    await bot.send_message(int(uid), "✅ **Ваш приз успешно выдан по почте в FNTD 2! Приятной игры!**")
-    await cb.message.edit_text(f"{cb.message.text}\n\n✅ **ПРИЗ УСПЕШНО ВЫДАН ИГРОКУ!**")
-
-# ================= MULTI-THREAD RUNNER =================
-
-def run_flask():
-    app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)))
-
-async def main():
-    global loop
-    loop = asyncio.get_running_loop()
-    # Запускаем Flask в отдельном потоке
-    import threading
-    threading.Thread(target=run_flask, daemon=True).start()
-    print("🚀 FNTD 2 UPGRADER SERVER STARTED!")
-    await dp.start_polling(bot)
+dp.include_router(router)
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    import threading
+    import asyncio
+    
+    def run_flask():
+        app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+        
+    threading.Thread(target=run_flask).start()
+    asyncio.run(dp.start_polling(bot))
