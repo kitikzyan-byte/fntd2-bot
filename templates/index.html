@@ -16,17 +16,11 @@
         .auth-input { width: 100%; background: #12151c; border: 1px solid #3a4454; color: #00ffcc; padding: 10px; border-radius: 8px; outline: none; font-weight: bold; font-size: 14px; margin-bottom: 15px; text-align: center; }
 
         .header { width: 100%; max-width: 420px; display: flex; justify-content: space-between; align-items: center; background: #161a23; border: 1px solid #2a313d; padding: 10px; border-radius: 12px; margin-bottom: 12px; }
-        .nick-box { display: flex; flex-direction: column; width: 70%; }
+        .nick-box { display: flex; flex-direction: column; width: 100%; }
         .nick-label { font-size: 10px; color: #ffaa00; font-weight: bold; margin-bottom: 2px; }
-        .nick-input { background: #12151c; border: 1px solid #3a4454; color: #00ffcc; padding: 6px 10px; border-radius: 6px; outline: none; font-weight: bold; font-size: 13px; }
-        .avatar-container { width: 48px; height: 48px; border-radius: 50%; border: 2px solid #ffaa00; overflow: hidden; background: #fff; display: flex; align-items: center; justify-content: center; }
-        .avatar-container img { width: 80%; height: 80%; object-fit: contain; }
+        .nick-input { background: #12151c; border: 1px solid #3a4454; color: #00ffcc; padding: 6px 10px; border-radius: 6px; outline: none; font-weight: bold; font-size: 13px; width: 100%; }
         
-        .bet-type-selector { display: flex; gap: 8px; width: 100%; max-width: 420px; margin-bottom: 10px; }
-        .type-btn { flex: 1; padding: 8px; background: #181d26; border: 1px solid #2d3645; color: #888; font-size: 11px; font-weight: bold; text-align: center; border-radius: 6px; cursor: pointer; text-transform: uppercase; }
-        .type-btn.active { background: #2ea043; color: #fff; border-color: #2ea043; }
-        
-        .souls-slider-box { display: none; width: 100%; max-width: 420px; background: #161b24; border: 1px solid #2ea043; padding: 10px; border-radius: 10px; margin-bottom: 12px; text-align: center; }
+        .souls-slider-box { width: 100%; max-width: 420px; background: #161b24; border: 1px solid #2ea043; padding: 10px; border-radius: 10px; margin-bottom: 12px; text-align: center; }
         .souls-slider-box label { font-size: 12px; font-weight: bold; color: #00ffcc; display: block; margin-bottom: 6px; }
         .souls-slider-box input { width: 100%; accent-color: #00ffcc; cursor: pointer; }
         
@@ -57,7 +51,7 @@
 </head>
 <body>
 
-    <div id="authOverlay">
+    <div id="authOverlay" style="display:none;">
         <div class="auth-card">
             <h2>Привет, улучшай своих юнитов в FNTD 2 UPGRADER!</h2>
             <p>Введите ваш Roblox ник для доступа к апгрейдеру:</p>
@@ -71,19 +65,11 @@
             <span class="nick-label">ROBLOX НИКНЕЙМ</span>
             <input type="text" id="robloxNick" class="nick-input" disabled>
         </div>
-        <div class="avatar-container">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Roblox_player_icon_black.svg/120px-Roblox_player_icon_black.svg.png">
-        </div>
-    </div>
-
-    <div class="bet-type-selector">
-        <div class="type-btn active" id="btnBetUnit" onclick="setBetType('unit')">Ставить Юнита</div>
-        <div class="type-btn" id="btnBetSouls" onclick="setBetType('souls')">Ставить Души</div>
     </div>
 
     <div class="souls-slider-box" id="soulsBox">
-        <label>Ставка: <span id="soulsVal">500</span> Souls</label>
-        <input type="range" id="soulsRange" min="100" max="4000" step="100" value="500" oninput="onSoulsSliderChange(this.value)">
+        <label>Добавить Souls к ставке: <span id="soulsVal">0</span> / 4000</label>
+        <input type="range" id="soulsRange" min="0" max="4000" step="100" value="0" oninput="onSoulsSliderChange(this.value)">
     </div>
 
     <div class="slots-wrapper">
@@ -127,9 +113,9 @@
 
     <div class="modal" id="approvedModal">
         <div class="modal-card" style="border-color: #2ea043;">
-            <h2 style="color:#2ea043; font-size:16px; margin-bottom:12px;">🎉 СТАВКА ПРИНЯТА!</h2>
-            <p style="color:#fff; font-size:12px; margin-bottom:15px; line-height: 1.4;">АПГРЕЙД НАЧНЕТСЯ ПОСЛЕ ЗАКРЫТИЯ ЭТОГО СООБЩЕНИЯ</p>
-            <button class="action-btn" onclick="closeApprovedAndStart()">НАЧАТЬ АПГРЕЙД</button>
+            <h2 id="resultTitle" style="color:#2ea043; font-size:16px; margin-bottom:12px;">🎉 РЕЗУЛЬТАТ АПГРЕЙДА</h2>
+            <p id="resultText" style="color:#fff; font-size:12px; margin-bottom:15px; line-height: 1.4;">АПГРЕЙД УСПЕШНО ЗАВЕРШЕН!</p>
+            <button class="action-btn" onclick="closeApprovedModal()">ОК</button>
         </div>
     </div>
 
@@ -138,62 +124,54 @@
         tg.expand();
         const userId = tg.initDataUnsafe?.user?.id || Math.floor(Math.random() * 1000000);
 
-        const PROXY = "https://wsrv.nl/?url=";
-        const SOULS_IMG = PROXY + "cdn-icons-png.flaticon.com/512/868/868681.png";
-        
-        // ВСТРОЕННАЯ КАРТИНКА Afterbite Withered Golden Freddy (Base64)
-        const GOLDEN_FREDDY_BASE64 = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAASABIBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=";
-        const DEFAULT_IMG = PROXY + "static.wikia.nocookie.net/fnaf-tower-defense/images/a/a2/Withered_Bonnie.png";
-
+        // Список юнитов и валюты строго по твоему списку
         const UNITS_LIST = [
-            { name: "Nature Reclaimed Foxy", val: 200000, img: DEFAULT_IMG },
-            { name: "Afterbite Withered Golden Freddy", val: 190000, img: GOLDEN_FREDDY_BASE64 }, // Встроена твоя картинка!
-            { name: "Deep Sea Calamity Endo", val: 180000, img: DEFAULT_IMG },
-            { name: "Foxy.EXE", val: 170000, img: DEFAULT_IMG },
-            { name: "Commander Withered Freddy", val: 160000, img: DEFAULT_IMG },
-            { name: "Fathomless Withered Foxy", val: 155000, img: DEFAULT_IMG },
-            { name: "Lorekeeper Shadow Bonnie", val: 150000, img: DEFAULT_IMG },
-            { name: "Music Man", val: 140000, img: DEFAULT_IMG },
-            { name: "Funtime Chica", val: 130000, img: DEFAULT_IMG },
-            { name: "Firework Shadow Freddy", val: 120000, img: DEFAULT_IMG },
-            { name: "Showtime Freddy", val: 110000, img: DEFAULT_IMG },
-            { name: "Nightmare Shadow Bonnie", val: 105000, img: DEFAULT_IMG },
-            { name: "Toy Foxy", val: 100000, img: DEFAULT_IMG },
-            { name: "Molten Freddy", val: 95000, img: DEFAULT_IMG },
-            { name: "Rockstar Foxy", val: 90000, img: DEFAULT_IMG },
-            { name: "Ignited Burst Withered Freddy", val: 85000, img: DEFAULT_IMG },
-            { name: "Fazman", val: 80000, img: DEFAULT_IMG },
-            { name: "Landslide Funtime Foxy", val: 75000, img: DEFAULT_IMG },
-            { name: "Elizabeth", val: 70000, img: DEFAULT_IMG },
-            { name: "Exotic Butters", val: 65000, img: DEFAULT_IMG },
-            { name: "Starfarer Princess", val: 60000, img: DEFAULT_IMG },
-            { name: "Hag Withered Chica", val: 55000, img: DEFAULT_IMG },
-            { name: "Freddles", val: 50000, img: DEFAULT_IMG },
-            { name: "Psychic Friend Fredbear", val: 45000, img: DEFAULT_IMG },
-            { name: "Nightmare Chica", val: 40000, img: DEFAULT_IMG },
-            { name: "Tarnished Springbonnie", val: 35000, img: DEFAULT_IMG },
-            { name: "Follow Me", val: 30000, img: DEFAULT_IMG },
-            { name: "Phantom Mangle", val: 25000, img: DEFAULT_IMG },
-            { name: "Krampus Purple Guy", val: 22000, img: DEFAULT_IMG },
-            { name: "Jack-O-Bonnie", val: 20000, img: DEFAULT_IMG },
-            { name: "Endo 02", val: 18000, img: DEFAULT_IMG },
-            { name: "Withered Foxy", val: 15000, img: DEFAULT_IMG },
-            { name: "Shadow Freddy", val: 12000, img: DEFAULT_IMG },
-            { name: "Candy Cadet", val: 10000, img: DEFAULT_IMG },
-            { name: "Lolbit", val: 8000, img: DEFAULT_IMG },
-            { name: "Phone Dude", val: 6000, img: DEFAULT_IMG },
-            { name: "Mangle", val: 5000, img: DEFAULT_IMG },
-            { name: "Frozen King Foxy", val: 4000, img: DEFAULT_IMG },
-            { name: "Headless Horseman Mangle", val: 3000, img: DEFAULT_IMG },
-            { name: "Yeti Oni Bonnie", val: 2000, img: DEFAULT_IMG },
-            { name: "Gaia Chica", val: 1000, img: DEFAULT_IMG }
+            { name: "Gaia Chica", val: 37000, img: "IMG_20260726_205154.jpg" },
+            { name: "Headless Horseman Mangle", val: 27000, img: "IMG_20260726_205225.jpg" },
+            { name: "Nature Reclaimed Foxy", val: 24000, img: IMG_20260726_200917 = "IMG_20260726_200917.jpg" }, // исправлено ниже
+            { name: "Candy Cadet", val: 18000, img: "IMG_20260726_204804.jpg" },
+            { name: "Valkyrie Chica", val: 17000, img: "IMG_20260726_205432.jpg" },
+            { name: "Lolbit", val: 17000, img: "IMG_20260726_204827.jpg" },
+            { name: "Phone Dude", val: 17000, img: "IMG_20260726_204925.jpg" },
+            { name: "Fathomeless Withered Foxy", val: 17000, img: "IMG_20260726_204529.jpg" },
+            { name: "Deep Sea Calamity Endo", val: 4500, img: "IMG_20260726_204540.jpg" },
+            { name: "Sole Survivor Withered Bonnie", val: 4500, img: "IMG_20260726_205253.jpg" },
+            { name: "Afterbite Withered Golden Freddy", val: 2000, img: "IMG_20260726_192010.jpg" },
+            { name: "Commander Withered Freddy", val: 2000, img: "IMG_20260726_204516.jpg" },
+            { name: "UFO TANGLE", val: 2000, img: "IMG_20260726_205050.jpg" },
+            { name: "Slasher Bonnie", val: 2000, img: "IMG_20260726_204738.jpg" },
+            { name: "Rockin Bonnie", val: 2000, img: "IMG_20260726_204631.jpg" },
+            { name: "Foxy EXE", val: 2000, img: "IMG_20260726_200932.jpg" },
+            { name: "Helpy", val: 2000, img: "IMG_20260726_204815.jpg" }
         ];
 
-        let betType = 'unit';
-        let currentBet = UNITS_LIST[UNITS_LIST.length - 1];
+        // Заменяем корявую строчку картинки Nature Reclaimed Foxy
+        UNITS_LIST[2].img = "IMG_20260726_200917.jpg";
+
+        const SOULS_IMG = "IMG_20260726_210055.jpg";
+
+        let currentBetUnit = UNITS_LIST[UNITS_LIST.length - 1]; // Самый дешевый по умолчанию
+        let soulsBetVal = 0;
         let currentTarget = UNITS_LIST[0];
         let chance = 0;
         let statusPollInterval = null;
+
+        // Проверка базы при загрузке (сохраненный ник)
+        async function checkSavedUser() {
+            try {
+                const res = await fetch(`/api/user_info/${userId}`);
+                const data = await res.json();
+                if (data.nick && data.nick.trim() !== "") {
+                    document.getElementById('robloxNick').value = data.nick;
+                    document.getElementById('authOverlay').style.display = 'none';
+                } else {
+                    document.getElementById('authOverlay').style.display = 'flex';
+                }
+            } catch(e) {
+                document.getElementById('authOverlay').style.display = 'flex';
+            }
+        }
+        checkSavedUser();
 
         function submitAuthNick() {
             const nick = document.getElementById('authNickInput').value.trim();
@@ -209,25 +187,9 @@
             });
         }
 
-        function setBetType(type) {
-            betType = type;
-            document.getElementById('btnBetUnit').className = 'type-btn ' + (type === 'unit' ? 'active' : '');
-            document.getElementById('btnBetSouls').className = 'type-btn ' + (type === 'souls' ? 'active' : '');
-            
-            if(type === 'souls') {
-                document.getElementById('soulsBox').style.display = 'block';
-                const sVal = parseInt(document.getElementById('soulsRange').value);
-                currentBet = { name: `${sVal} Souls`, val: sVal, img: SOULS_IMG };
-            } else {
-                document.getElementById('soulsBox').style.display = 'none';
-                currentBet = UNITS_LIST[UNITS_LIST.length - 1];
-            }
-            updateSlots();
-        }
-
         function onSoulsSliderChange(val) {
-            document.getElementById('soulsVal').innerText = val;
-            currentBet = { name: `${val} Souls`, val: parseInt(val), img: SOULS_IMG };
+            soulsBetVal = parseInt(val);
+            document.getElementById('soulsVal').innerText = soulsBetVal;
             updateSlots();
         }
 
@@ -247,26 +209,37 @@
         }
 
         function updateSlots() {
-            document.getElementById('imgBet').src = currentBet.img;
-            document.getElementById('titleBet').innerText = currentBet.name;
+            // Отображаем юнита как ставку, плюс учитываем души в математике
+            document.getElementById('imgBet').src = currentBetUnit.img;
+            document.getElementById('titleBet').innerText = currentBetUnit.name + (soulsBetVal > fnGetSouls() ? '' : '');
             document.getElementById('imgTarget').src = currentTarget.img;
             document.getElementById('titleTarget').innerText = currentTarget.name;
 
-            let raw = (currentBet.val / currentTarget.val) * 85;
-            chance = Math.min(95, Math.max(0.1, raw)).toFixed(2);
+            let totalBetVal = currentBetUnit.val + soulsBetVal;
+            let raw = (totalBetVal / currentTarget.val) * 70;
+            // Максимальный шанс строго 70%
+            chance = Math.min(70, Math.max(0.1, raw)).toFixed(2);
             document.getElementById('chanceNum').innerText = chance + '%';
-            drawWheel();
+            drawWheel(0);
         }
+
+        function fnGetSouls() { return soulsBetVal; }
 
         const canvas = document.getElementById('wheelCanvas');
         const ctx = canvas.getContext('2d');
 
-        function drawWheel() {
+        function drawWheel(angleOffset = 0) {
             ctx.clearRect(0, 0, 160, 160);
             const winAngle = (chance / 100) * 2 * Math.PI;
             
-            ctx.beginPath(); ctx.moveTo(80, 80); ctx.arc(80, 80, 78, 0, winAngle); ctx.fillStyle = "#2ea043"; ctx.fill();
-            ctx.beginPath(); ctx.moveTo(80, 80); ctx.arc(80, 80, 78, winAngle, 2 * Math.PI); ctx.fillStyle = "#da3633"; ctx.fill();
+            ctx.save();
+            ctx.translate(80, 80);
+            ctx.rotate(angleOffset);
+            
+            ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, 78, 0, winAngle); ctx.fillStyle = "#2ea043"; ctx.fill();
+            ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, 78, winAngle, 2 * Math.PI); ctx.fillStyle = "#da3633"; ctx.fill();
+            
+            ctx.restore();
         }
 
         renderGrid();
@@ -281,13 +254,16 @@
             document.getElementById('waitingModal').style.display = 'flex';
 
             const nick = document.getElementById('robloxNick').value;
+            let betDesc = `${currentBetUnit.name}`;
+            if(soulsBetVal > 0) betDesc += ` + ${soulsBetVal} Souls`;
+
             await fetch('/api/submit_upgrade', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
                     user_id: userId,
                     roblox_nick: nick,
-                    bet_info: currentBet.name
+                    bet_info: betDesc
                 })
             });
 
@@ -299,24 +275,52 @@
                 const res = await fetch(`/api/check_status/${userId}`);
                 const data = await res.json();
                 
-                if (data.status === 'approved') {
+                if (data.status === 'approved' || data.status === 'rejected') {
                     clearInterval(statusPollInterval);
                     document.getElementById('waitingModal').style.display = 'none';
-                    document.getElementById('approvedModal').style.display = 'flex';
-                } else if (data.status === 'rejected') {
-                    clearInterval(statusPollInterval);
-                    document.getElementById('waitingModal').style.display = 'none';
-                    alert("❌ Администратор отклонил вашу ставку.");
+                    
+                    if (data.status === 'approved') {
+                        runUpgradeAnimation(() => {
+                            document.getElementById('resultTitle').style.color = '#2ea043';
+                            document.getElementById('resultTitle').innerText = "🎉 АПГРЕЙД УСПЕШЕН!";
+                            document.getElementById('resultText').innerText = "ВЫ ПОЛУЧИЛИ НОВОГО ЮНИТА!";
+                            document.getElementById('approvedModal').style.display = 'flex';
+                        });
+                    } else {
+                        document.getElementById('resultTitle').style.color = '#da3633';
+                        document.getElementById('resultTitle').innerText = "❌ СТАВКА ОТКЛОНЕНА";
+                        document.getElementById('resultText').innerText = "Администратор отклонил вашу ставку.";
+                        document.getElementById('approvedModal').style.display = 'flex';
+                    }
                 }
             } catch(e) {}
         }
 
-        async function closeApprovedAndStart() {
+        // Анимация вращения колеса при одобрении
+        function runUpgradeAnimation(callback) {
+            let currentAngle = 0;
+            let speed = 0.5;
+            let spins = 0;
+            
+            function animate() {
+                currentAngle += speed;
+                speed *= 0.98; // замедление
+                drawWheel(currentAngle);
+                
+                if (speed > 0.005) {
+                    requestAnimationFrame(animate);
+                } else {
+                    setTimeout(callback, 400);
+                }
+            }
+            animate();
+        }
+
+        async function closeApprovedModal() {
             document.getElementById('approvedModal').style.display = 'none';
             await fetch(`/api/reset_status/${userId}`, { method: 'POST' });
-            alert("🎰 Апгрейд запущен! Удачи!");
         }
     </script>
 </body>
-    </html>
-    
+                                                                   </html>
+                
