@@ -92,7 +92,7 @@
 
     <button class="action-btn" onclick="startUpgradeProcess()">СДЕЛАТЬ АПГРЕЙД</button>
 
-    <!-- УВЕДОМЛЕНИЕ О ДОСТАВКЕ ПРИЗА (ДЛЯ ОФЛАЙНА) -->
+    <!-- ВСПЛЫВАЮЩЕЕ ОКНО ДЛЯ ПРИЗА ИЗ ОФЛАЙНА -->
     <div class="modal" id="prizeDeliveredModal">
         <div class="modal-card" style="border-color: #2ea043;">
             <h2 style="color:#2ea043; font-size:20px; margin-bottom:10px;">🎉 ПРИЗ ДОСТАВЛЕН!</h2>
@@ -114,11 +114,10 @@
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-        const userId = tg.initDataUnsafe?.user?.id || Math.floor(Math.random()*1000000);
+        const userId = tg.initDataUnsafe?.user?.id || 123456789;
 
-        // ИКОНКА ДУШ И ЮНИТА
-        const SOULS_IMG = "https://i.ibb.co/L53pG8F/souls.png";
-        const WITHERED_BONNIE_IMG = "https://share.google/Ef0dw4vwR5OK8OFwv";
+        const SOULS_IMG = "https://cdn-icons-png.flaticon.com/512/868/868681.png";
+        const WITHERED_BONNIE_IMG = "https://cdn-icons-png.flaticon.com/512/4333/4333609.png";
 
         const UNITS_LIST = [
             { name: "Sole Survivor Withered Bonnie", val: 150000, img: WITHERED_BONNIE_IMG }
@@ -130,19 +129,15 @@
         let chance = 0;
         let activePrizeId = null;
 
-        // ПРОВЕРКА БАЗЫ ДАННЫХ ПРИ СТАРТЕ
         async function loadUserData() {
             try {
                 const res = await fetch(`/api/user_info/${userId}`);
                 const data = await res.json();
                 
-                // Восстанавливаем сохраненный ник
                 if(data.roblox_nick) {
                     document.getElementById('robloxNick').value = data.roblox_nick;
-                    updateAvatar(data.roblox_nick);
                 }
 
-                // Проверяем, был ли выдан приз пока игрок был оффлайн
                 if(data.delivered_prize) {
                     activePrizeId = data.delivered_prize.id;
                     document.getElementById('deliveredPrizeName').innerText = data.delivered_prize.name;
@@ -167,35 +162,12 @@
             const nick = document.getElementById('robloxNick').value.trim();
             clearTimeout(nickTimeout);
             nickTimeout = setTimeout(() => {
-                updateAvatar(nick);
-                // Сохраняем в БД
                 fetch(`/api/user_info/${userId}`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ roblox_nick: nick })
                 });
-            }, 600);
-        }
-
-        async function updateAvatar(nick) {
-            if(!nick) return;
-            try {
-                const proxy = "https://corsproxy.io/?";
-                const userRes = await fetch(proxy + encodeURIComponent("https://users.roblox.com/v1/usernames/users"), {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({usernames: [nick], excludeBannedUsers: true})
-                });
-                const userData = await userRes.json();
-                if(userData.data?.[0]?.id) {
-                    const uid = userData.data[0].id;
-                    const thumbRes = await fetch(proxy + encodeURIComponent(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${uid}&size=150x150&format=Png&isCircular=true`));
-                    const thumbData = await thumbRes.json();
-                    if(thumbData.data?.[0]?.imageUrl) {
-                        document.getElementById('userAvatar').src = thumbData.data[0].imageUrl;
-                    }
-                }
-            } catch(e) {}
+            }, 500);
         }
 
         function setBetType(type) {
@@ -226,7 +198,7 @@
             UNITS_LIST.forEach(item => {
                 const card = document.createElement('div');
                 card.className = 'grid-item';
-                card.innerHTML = `<img src="${item.img}" onerror="this.src='${SOULS_IMG}'"><p>${item.name}</p>`;
+                card.innerHTML = `<img src="${item.img}"><p>${item.name}</p>`;
                 card.onclick = () => {
                     currentTarget = item;
                     updateSlots();
@@ -266,11 +238,11 @@
             document.getElementById('payModal').style.display = 'flex';
         }
 
-        async function confirmPayment() {
+        function confirmPayment() {
             document.getElementById('payModal').style.display = 'none';
-            alert("Заявка отправлена администратору!");
+            alert("Заявка успешно отправлена!");
         }
     </script>
 </body>
-        </html>
+    </html>
     
